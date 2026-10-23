@@ -9,7 +9,7 @@ Melhorar o ditado em voz baixa e a qualidade do áudio antes da transcrição, p
 
 ## Objetivos
 
-1. Controle de sensibilidade visível durante a gravação, ajustável pela rodinha do mouse, sem clique.
+1. Controle de sensibilidade visível **antes e durante** a gravação, ajustável pela rodinha do mouse, sem clique.
 2. A onda de áudio acompanhar a sensibilidade efetiva.
 3. Normalização fiel à cadeia do editor: gate de silêncio + compressor + EBU R128 loudnorm dual-pass.
 4. Salvar, a cada gravação, o áudio original e o áudio processado em `audios_teste/`.
@@ -44,7 +44,7 @@ Melhorar o ditado em voz baixa e a qualidade do áudio antes da transcrição, p
 
 ### Sensibilidade
 
-**A — slider de 7 níveis na pílula (escolhida).** Trilho fino abaixo da onda, knob e 7 marcas; roda do mouse muda um nível. Discrição e previsibilidade.
+**A — slider de 7 níveis na pílula (escolhida).** Trilho fino abaixo da onda, knob e 7 marcas; roda do mouse muda um nível. Fica visível no hover em READY e durante a gravação, para regular antes de começar. Discrição e previsibilidade.
 
 **B — botões +/−.** Mais óbvio, porém o usuário pediu slider e os botões ocupariam a toolbar.
 
@@ -66,11 +66,11 @@ Melhorar o ditado em voz baixa e a qualidade do áudio antes da transcrição, p
 - A onda e o `_vad_trim` usam os limiares efetivos; a sensibilidade não é salva no config.
 - Áudios: `audios_teste/AAAAMMDD_HHMMSS_original.wav` e `..._processado.wav`; original antes do denoise, processado depois de gate + loudnorm e antes do chunking.
 - Visual: `STATE_PROCESSING` usa `IDLE_W`; arco laranja no perímetro; `STATE_READY` com status expande e o status é limpo após 2000 ms.
-- Rodinha: tratar `WM_MOUSEWHEEL` quando o cursor estiver sobre o conteúdo e a gravação estiver ativa. Se o Windows não entregar a mensagem por a janela ser `WS_EX_NOACTIVATE`, a contingência é um hook `WH_MOUSE_LL`; verificar manualmente antes de considerar pronto.
+- Rodinha: tratar `WM_MOUSEWHEEL` quando o cursor estiver sobre o conteúdo e o app estiver **READY ou RECORDING**. Em READY, o hover expande a pílula e mostra o slider; ao sair o mouse, ela volta ao círculo. Se o Windows não entregar a mensagem por a janela ser `WS_EX_NOACTIVATE`, a contingência é um hook `WH_MOUSE_LL`; verificar manualmente antes de considerar pronto.
 
 ## Critérios de aceite
 
-- Durante a gravação, o slider aparece abaixo da onda; a roda muda o nível sem clique; a onda muda de escala junto.
+- Antes ou durante a gravação, o slider aparece; em READY, o hover expande a pílula, e a roda muda o nível sem clique; a onda muda de escala junto.
 - O nível escolhido continua entre gravações na mesma sessão e volta a 4/7 ao reabrir.
 - Áudio processado passa por gate + loudnorm; o original e o processado são salvos e audíveis.
 - Se o ffmpeg falhar, o app não cai: registra o erro, usa o áudio com gate (ou o denoised) e continua.

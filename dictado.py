@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 
 import audio_fx
+import ui_dispatch
 import widget_ui
 
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -34,6 +35,8 @@ MODEL_SIZE = "large"
 LANGUAGE = "pt"
 SAMPLE_RATE = 16000
 HOTKEY = "ctrl+y"
+SENS_LEVELS = 7
+SENS_DEFAULT = 4
 
 DEFAULT_CFG = {
     "silence": 0.006,
@@ -164,6 +167,7 @@ class DictadoApp:
         self.hotkey_queue = queue.Queue()
         self.env = 0.0
         self.cfg = load_cfg()
+        self.sens_level = SENS_DEFAULT
         self.settings_open = False
         self.settings_win = None
         self.preview_stream = None
@@ -180,6 +184,7 @@ class DictadoApp:
         self._load_lock = threading.Lock()
         self._hotkey_tid = 0
         self._hotkey_stop = None
+        self.ui_queue = ui_dispatch.UiDispatcher(logger=log)
 
         self._splash_proc = None
         self._splash_watch_id = None
@@ -189,6 +194,7 @@ class DictadoApp:
             on_settings=self._open_settings,
             on_copy=self.on_copy,
             on_close=self.on_close,
+            on_sensitivity=self._on_sensitivity_wheel,
             logger=log,
             show=False,
         )
@@ -209,6 +215,7 @@ class DictadoApp:
         threading.Thread(target=self._warm_recorder, daemon=True).start()
         threading.Thread(target=self._start_rpc, daemon=True).start()
         self._tick_level()
+        self.root.after(16, self._drain_ui)
 
         # RegisterHotKey do Windows: nao expira como o hook de baixo nivel da
         # lib keyboard (que era removido em silencio apos um timeout).
@@ -470,7 +477,40 @@ class DictadoApp:
         self.root.after(200, self._tick_progress)
 
     def _ui(self, fn, *args):
-        self.root.after(0, lambda: fn(*args))
+        # Tkinter so pode ser tocado pela thread principal.  As threads de
+        # modelo/gravacao/RPC enfileiram aqui; _drain_ui roda no Tk.
+        self.ui_queue.submit(fn, *args)
+
+    def _drain_ui(self):
+        if self.ui_queue.closed:
+            return
+        self.ui_queue.drain()
+        self.root.after(16, self._drain_ui)
+
+    def _effective_thresholds(self):
+        return audio_fx.effective_thresholds(
+            float(self.cfg.get("silence", 0.006)),
+            float(self.cfg.get("voice", 0.02)),
+            self.sens_level,
+        )
+
+    def _gate_sensitivity_db(self):
+        return audio_fx.gate_sensitivity_db(self.sens_level)
+
+    def _set_sensitivity(self, level):
+        self.sens_level = audio_fx.next_sensitivity_level(level, 0)
+        self.view.set_sensitivity(
+            self.sens_level,
+            SENS_LEVELS,
+            self.state in (STATE_READY, STATE_RECORDING),
+        )
+
+    def _on_sensitivity_wheel(self, delta):
+        if self.state not in (STATE_READY, STATE_RECORDING) or not delta:
+            return
+        self.sens_level = audio_fx.next_sensitivity_level(self.sens_level, delta)
+        self.view.set_sensitivity(self.sens_level, SENS_LEVELS, True)
+        log(f"sensibilidade: {self.sens_level}/{SENS_LEVELS}")
 
     def _waveform_bars(self, n=36, span=0.9):
         # desenha o envelope real dos ultimos ~0,9s; sem som, fica parado
@@ -516,10 +556,10 @@ class DictadoApp:
         # Escala fixa: o mesmo ruido sempre gera a mesma altura. Antes a
         # referencia era o maior pico da janela, entao um ruido passageiro
         # fazia a onda inteira "redimensionar" para cima.
-        voice = max(float(self.cfg.get("voice", 0.02)), 0.0005)
+        eff_silence, eff_voice = self._effective_thresholds()
+        voice = max(eff_voice, 0.0005)
         ref = min(max(voice * 8.0, 0.12), 0.5)
-        floor = max(float(self.cfg.get("silence", 0.006)),
-                    voice * 0.75, 0.0004)
+        floor = max(eff_silence, voice * 0.75, 0.0004)
         floor = min(floor, ref * 0.75)
         out = []
         for v in vals:
@@ -1136,6 +1176,7 @@ class DictadoApp:
                 self.recorder_mode = True
                 self.recording = True
                 self._set_state(STATE_RECORDING)
+                self.view.set_sensitivity(self.sens_level, SENS_LEVELS, True)
                 log(">>> GRAVANDO... (Ctrl+Y ou clique para parar)")
                 return
             except Exception as exc:
@@ -1172,6 +1213,7 @@ class DictadoApp:
             self.recorder_mode = False
             self.recording = True
             self._set_state(STATE_RECORDING)
+            self.view.set_sensitivity(self.sens_level, SENS_LEVELS, True)
             log(">>> GRAVANDO... (Ctrl+Y ou clique para parar)")
         except Exception as exc:
             self.recording = False
@@ -1205,8 +1247,9 @@ class DictadoApp:
         env, n = audio_envelope(audio, frame=0.02, attack=0.5, release=0.04)
         # limiar adaptativo: ajusta-se ao volume real da gravacao
         p90 = float(np.percentile(env, 90))
-        thr = max(self.cfg["voice"] * 0.5, p90 * 0.25, 0.003)
-        thr = min(thr, self.cfg["voice"] * 1.5)
+        _, eff_voice = self._effective_thresholds()
+        thr = max(eff_voice * 0.5, p90 * 0.25, 0.003)
+        thr = min(thr, eff_voice * 1.5)
         active = env > thr
         if not active.any():
             return (audio, False, 0) if want_offset else (audio, False)
@@ -1269,6 +1312,7 @@ class DictadoApp:
             log("ALERTA: audio quase silencioso - verifique ganho do microfone")
         log(">>> TRANSCREVENDO...")
         self._set_state(STATE_PROCESSING)
+        self.view.set_sensitivity(self.sens_level, SENS_LEVELS, True)
         self.jobs.put(raw)
 
     def _trim_gpu_cache(self):
@@ -1395,7 +1439,7 @@ class DictadoApp:
         try:
             audio = audio_fx.normalize_audio(
                 audio, SAMPLE_RATE,
-                sensitivity_db=0.0,  # Task 3 troca por self._gate_sensitivity_db()
+                sensitivity_db=self._gate_sensitivity_db(),
                 strength="suave",
                 logger=log,
             )
@@ -1910,6 +1954,7 @@ class DictadoApp:
 
     def on_close(self):
         log("fechando app")
+        self.ui_queue.close()
         try:
             self._stop_splash(show_view=False)
         except Exception:

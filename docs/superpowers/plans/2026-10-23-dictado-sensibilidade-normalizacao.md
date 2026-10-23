@@ -26,7 +26,7 @@
 
 - **Very quiet speech at level 7:** the gate must not erase the whole take; the VAD/waveform must still see it. Test with a low-amplitude tone and with gate sensitivity −6 dB.
 - **Silence-only or very short recordings:** loudnorm can return silence/NaN; the app must not crash and must keep the original. Test `loudnorm_audio` with zeros and a 0.1 s tone.
-- **Wheel over a no-activate layered window:** the wheel must change only the sensitivity while recording, not scroll the app underneath. Test the sign/clamp helper and verify manually on Windows 10; if Windows does not deliver `WM_MOUSEWHEEL`, add the `WH_MOUSE_LL` contingency from the spec.
+- **Wheel over a no-activate layered window:** the wheel must change only the sensitivity while ready or recording, not scroll the app underneath. Test the sign/clamp helper and verify manually on Windows 10; if Windows does not deliver `WM_MOUSEWHEEL`, add the `WH_MOUSE_LL` contingency from the spec.
 - **Short transcription jobs:** progress duration can be below 1.5 s; the orange ring must still draw and must not stay stuck at 0%.
 - **Missing/broken ffmpeg:** normalization must fall back to gated audio, still save the files it can, and still transcribe.
 
@@ -457,10 +457,14 @@ def _gate_sensitivity_db(self):
 
 def _set_sensitivity(self, level):
     self.sens_level = audio_fx.next_sensitivity_level(level, 0)
-    self.view.set_sensitivity(self.sens_level, SENS_LEVELS, self.recording)
+    self.view.set_sensitivity(
+        self.sens_level,
+        SENS_LEVELS,
+        self.state in (STATE_READY, STATE_RECORDING),
+    )
 
 def _on_sensitivity_wheel(self, delta):
-    if not self.recording or not delta:
+    if self.state not in (STATE_READY, STATE_RECORDING) or not delta:
         return
     self.sens_level = audio_fx.next_sensitivity_level(self.sens_level, delta)
     self.view.set_sensitivity(self.sens_level, SENS_LEVELS, True)
@@ -494,10 +498,11 @@ In `_start_recording`, after entering `STATE_RECORDING`, call:
 self.view.set_sensitivity(self.sens_level, SENS_LEVELS, True)
 ```
 
-In `_stop_recording`, after sending `stop`, call:
+In `_stop_recording`, after sending `stop`, keep the slider available for the
+next READY hover:
 
 ```python
-self.view.set_sensitivity(self.sens_level, SENS_LEVELS, False)
+self.view.set_sensitivity(self.sens_level, SENS_LEVELS, True)
 ```
 
 - [ ] **Step 4: Add the native slider and wheel handler**
@@ -524,7 +529,15 @@ def set_sensitivity(self, level, levels=7, visible=True):
 
 - `Renderer.render` accepts `sens_level`, `sens_levels`, `sens_visible` and passes them to `_draw_expanded`.
 - In `NativeWidget._render`, pass `sens_level=self.sens_level`, `sens_levels=self.sens_levels`, and `sens_visible=self.sens_visible` to `self.renderer.render(...)`.
-- In `_draw_expanded`, in the `STATE_RECORDING` branch, after the bars/timer, draw the slider when `sens_visible`:
+- In `NativeWidget._target_width`, allow the READY hover to expand the pill so the
+  slider is available before recording:
+
+```python
+if self.state == STATE_READY and self.hover > 0.01:
+    return float(EXPANDED_W)
+```
+
+- In `_draw_expanded`, in the `STATE_RECORDING` branch, after the bars/timer, draw the slider when `sens_visible`. In the READY branch, after drawing the check/status text, draw the same slider when `sens_visible` (the track sits at `cy2 - 6.0`, below the text). Use:
 
 ```python
 track_x1 = cx1 + 30.0
@@ -659,6 +672,8 @@ if self.state == STATE_RECORDING:
 if self.state == STATE_PROCESSING:
     return float(IDLE_W)
 if self.state == STATE_ERROR or self.status:
+    return float(EXPANDED_W)
+if self.state == STATE_READY and self.hover > 0.01:
     return float(EXPANDED_W)
 return float(IDLE_W)
 ```

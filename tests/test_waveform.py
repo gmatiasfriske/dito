@@ -1,6 +1,6 @@
 import threading
 import unittest
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 
 import numpy as np
 
@@ -20,7 +20,10 @@ class WaveformScaleTest(unittest.TestCase):
             buffer_lock=threading.Lock(),
             buffer=[audio],
             cfg={"silence": 0.006, "voice": 0.02},
+            sens_level=4,
         )
+        app._effective_thresholds = MethodType(
+            dictado.DictadoApp._effective_thresholds, app)
         return dictado.DictadoApp._waveform_bars(app, n=36, span=0.9)
 
     def test_silence_stays_at_baseline(self):

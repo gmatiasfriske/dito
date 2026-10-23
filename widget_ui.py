@@ -71,6 +71,7 @@ WM_SETCURSOR = 0x0020
 WM_MOUSEACTIVATE = 0x0021
 WM_NCHITTEST = 0x0084
 WM_MOUSEMOVE = 0x0200
+WM_MOUSEWHEEL = 0x020A
 WM_LBUTTONDOWN = 0x0201
 WM_LBUTTONUP = 0x0202
 WM_LBUTTONDBLCLK = 0x0203
@@ -297,6 +298,9 @@ class Renderer:
         hover_btn=None,
         spinner=0.0,
         pulse=0.0,
+        sens_level=4,
+        sens_levels=7,
+        sens_visible=False,
     ):
         u = self.u
         W = int(round(LOGICAL_W * u))
@@ -360,6 +364,7 @@ class Renderer:
             self._draw_expanded(
                 expanded, state, accent, cx1, cx2, cy1, cy2,
                 timer, progress, status, bars or [], pulse,
+                sens_level, sens_levels, sens_visible,
             )
             _alpha(expanded, exp_a)
             base.alpha_composite(expanded)
@@ -451,7 +456,8 @@ class Renderer:
             )
 
     def _draw_expanded(self, img, state, accent, cx1, cx2, cy1, cy2,
-                       timer, progress, status, bars, pulse):
+                       timer, progress, status, bars, pulse,
+                       sens_level=4, sens_levels=7, sens_visible=False):
         u = self.u
         d = ImageDraw.Draw(img)
         cy = (cy1 + cy2) / 2.0
@@ -489,6 +495,9 @@ class Renderer:
             f = _font(12.5 * u, "semibold")
             d.text((self._px(cx2 - 14.0), self._px(cy + 0.2)), txt,
                    font=f, fill=(245, 245, 248, 235), anchor="rm")
+            if sens_visible:
+                self._draw_sensitivity(d, accent, cx1, cx2, cy2,
+                                       sens_level, sens_levels)
             return
 
         if state == STATE_PROCESSING:
@@ -550,6 +559,36 @@ class Renderer:
         text = _truncate(d, text, f, self._px(max_w))
         d.text((self._px(cx1 + 36.0), self._px(cy + 0.3)), text,
                font=f, fill=(240, 240, 244, 232), anchor="lm")
+        if sens_visible:
+            self._draw_sensitivity(d, accent, cx1, cx2, cy2,
+                                   sens_level, sens_levels)
+
+    def _draw_sensitivity(self, d, accent, cx1, cx2, cy2, level, levels):
+        n = max(1, int(levels))
+        level = max(1, min(n, int(level)))
+        track_x1 = cx1 + 30.0
+        track_x2 = cx2 - 58.0
+        track_y = cy2 - 6.0
+        d.rounded_rectangle(
+            [self._px(track_x1), self._px(track_y - 1.0),
+             self._px(track_x2), self._px(track_y + 1.0)],
+            radius=self._px(1.0), fill=(255, 255, 255, 40),
+        )
+        for i in range(n):
+            frac = i / max(1, n - 1)
+            tx = track_x1 + (track_x2 - track_x1) * frac
+            d.ellipse(
+                [self._px(tx - 1.1), self._px(track_y - 1.1),
+                 self._px(tx + 1.1), self._px(track_y + 1.1)],
+                fill=(255, 255, 255, 80),
+            )
+        knob_frac = (level - 1) / max(1, n - 1)
+        knob_x = track_x1 + (track_x2 - track_x1) * knob_frac
+        d.ellipse(
+            [self._px(knob_x - 2.6), self._px(track_y - 2.6),
+             self._px(knob_x + 2.6), self._px(track_y + 2.6)],
+            fill=accent + (245,),
+        )
 
     def _draw_toolbar(self, img, state, cx1, cx2, cy1, hover_btn):
         u = self.u
@@ -799,7 +838,7 @@ def _window_proc(hwnd, msg, wparam, lparam):
 
 class NativeWidget:
     def __init__(self, root, cfg, scale, on_toggle, on_settings,
-                 on_copy, on_close, logger=None, show=True):
+                 on_copy, on_close, on_sensitivity=None, logger=None, show=True):
         self.root = root
         self.cfg = cfg
         self.scale = float(scale)
@@ -807,6 +846,7 @@ class NativeWidget:
         self.on_settings = on_settings
         self.on_copy = on_copy
         self.on_close = on_close
+        self.on_sensitivity = on_sensitivity
         self.log = logger or _log_none
         self.visible = False
 
@@ -825,6 +865,9 @@ class NativeWidget:
         self.pulse = 0.0
         self.accent = ACCENTS[STATE_LOADING]
         self.width = float(IDLE_W)
+        self.sens_level = 4
+        self.sens_levels = 7
+        self.sens_visible = False
         self.hover = False
         self.hover_t = 0.0
         self.hover_btn = None
@@ -889,6 +932,8 @@ class NativeWidget:
         user32.DestroyWindow.restype = wt.BOOL
         user32.SetCapture.argtypes = [wt.HWND]
         user32.ReleaseCapture.restype = wt.BOOL
+        user32.ScreenToClient.argtypes = [wt.HWND, ctypes.POINTER(wt.POINT)]
+        user32.ScreenToClient.restype = wt.BOOL
 
     def _create_window(self):
         class WNDCLASSEXW(ctypes.Structure):
@@ -1053,6 +1098,8 @@ class NativeWidget:
             return float(EXPANDED_W)
         if self.state == STATE_ERROR:
             return float(EXPANDED_W)
+        if self.state == STATE_READY and self.hover > 0.01:
+            return float(EXPANDED_W)
         if self.status:
             return float(EXPANDED_W)
         return float(IDLE_W)
@@ -1076,6 +1123,17 @@ class NativeWidget:
         if self.status:
             self.status = ""
             self._dirty = True
+
+    def set_sensitivity(self, level, levels=7, visible=True):
+        level = max(1, min(int(levels), int(level)))
+        if (level, int(levels), bool(visible)) == (
+            self.sens_level, self.sens_levels, self.sens_visible
+        ):
+            return
+        self.sens_level = level
+        self.sens_levels = int(levels)
+        self.sens_visible = bool(visible)
+        self._dirty = True
 
     def set_timer(self, text):
         if text != self.timer:
@@ -1239,6 +1297,10 @@ class NativeWidget:
             hover_btn=self.hover_btn,
             spinner=self.spinner,
             pulse=self.pulse,
+            sens_level=self.sens_level,
+            sens_levels=self.sens_levels,
+            sens_visible=self.sens_visible or (
+                self.state == STATE_READY and self.hover),
         )
         ok = self._surface.update(self._hwnd, img)
         if not ok:
@@ -1290,6 +1352,18 @@ class NativeWidget:
             if self._hit_local(pt.x - rx, pt.y - ry):
                 user32.SetCursor(self._hand_cursor)
                 return 1
+            return user32.DefWindowProcW(
+                wt.HWND(self._hwnd), msg, wparam, lparam)
+        if msg == WM_MOUSEWHEEL:
+            delta = ctypes.c_short((wparam >> 16) & 0xFFFF).value
+            pt = wt.POINT(
+                ctypes.c_short(lparam & 0xFFFF).value,
+                ctypes.c_short((lparam >> 16) & 0xFFFF).value,
+            )
+            user32.ScreenToClient(wt.HWND(self._hwnd), ctypes.byref(pt))
+            if self._hit_local(pt.x, pt.y) == "content" and self.on_sensitivity:
+                self._call(lambda d=delta: self.on_sensitivity(d))
+                return 0
             return user32.DefWindowProcW(
                 wt.HWND(self._hwnd), msg, wparam, lparam)
         if msg == WM_LBUTTONDOWN:
@@ -1389,7 +1463,7 @@ class NativeWidget:
 
 class ClassicWidget:
     def __init__(self, root, cfg, scale, on_toggle, on_settings,
-                 on_copy, on_close, logger=None, show=True):
+                 on_copy, on_close, on_sensitivity=None, logger=None, show=True):
         self.root = root
         self.cfg = cfg
         self.scale = float(scale)
@@ -1397,6 +1471,7 @@ class ClassicWidget:
         self.on_settings = on_settings
         self.on_copy = on_copy
         self.on_close = on_close
+        self.on_sensitivity = on_sensitivity
         self.log = logger or _log_none
         self.visible = bool(show)
         self.state = STATE_LOADING
@@ -1657,6 +1732,9 @@ class ClassicWidget:
     def visible_center(self):
         x, y, w, h = self.rect()
         return (x + w // 2, y + h // 2)
+
+    def set_sensitivity(self, level, levels=7, visible=True):
+        return None
 
     def set_state(self, state, extra=None):
         self.state = state
@@ -1929,7 +2007,7 @@ class ModernToggle(tk.Canvas):
 
 
 def create_view(root, cfg, on_toggle, on_settings, on_copy, on_close,
-                logger=None, show=True):
+                on_sensitivity=None, logger=None, show=True):
     log = logger or _log_none
     base_scale = system_scale()
     mode = str(cfg.get("ui", "auto")).lower()
@@ -1942,7 +2020,8 @@ def create_view(root, cfg, on_toggle, on_settings, on_copy, on_close,
             factor = _clamp(factor, 0.5, 1.0)
             view = NativeWidget(
                 root, cfg, base_scale * factor, on_toggle, on_settings,
-                on_copy, on_close, logger=log, show=show,
+                on_copy, on_close, on_sensitivity=on_sensitivity,
+                logger=log, show=show,
             )
             view.settings_scale = base_scale
             log("interface moderna ativa (widget em camada nativa)")
@@ -1953,7 +2032,8 @@ def create_view(root, cfg, on_toggle, on_settings, on_copy, on_close,
     try:
         view = ClassicWidget(
             root, cfg, base_scale, on_toggle, on_settings,
-            on_copy, on_close, logger=log, show=show,
+            on_copy, on_close, on_sensitivity=on_sensitivity,
+            logger=log, show=show,
         )
         log("interface classica ativa")
         return view
