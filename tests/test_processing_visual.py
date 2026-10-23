@@ -34,6 +34,12 @@ class RingTests(unittest.TestCase):
                      if r_ > 150 and g_ > 60 and b_ < 80 and a_ > 0)
         self.assertGreater(orange, 10)
 
+    def test_recording_narrow_width_with_slider_does_not_raise(self):
+        r = widget_ui.Renderer(0.8)
+        img = r.render(state=widget_ui.STATE_RECORDING,
+                       width=86, sens_visible=True)
+        self.assertIsInstance(img, Image.Image)
+
 
 if __name__ == "__main__":
     unittest.main()

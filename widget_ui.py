@@ -585,6 +585,8 @@ class Renderer:
         level = max(1, min(n, int(level)))
         track_x1 = cx1 + 30.0
         track_x2 = cx2 - 58.0
+        if track_x2 - track_x1 < 2.0:
+            return
         track_y = cy2 - 6.0
         d.rounded_rectangle(
             [self._px(track_x1), self._px(track_y - 1.0),

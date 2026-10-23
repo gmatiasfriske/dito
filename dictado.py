@@ -221,6 +221,7 @@ class DictadoApp:
         # RegisterHotKey do Windows: nao expira como o hook de baixo nivel da
         # lib keyboard (que era removido em silencio apos um timeout).
         self._start_hotkey_listener()
+        self.root.report_callback_exception = self._report_callback_exception
         self.root.after(WATCHDOG_MS, self._watchdog)
 
         try:
@@ -2010,6 +2011,11 @@ class DictadoApp:
             self.root.destroy()
         except Exception:
             pass
+
+    def _report_callback_exception(self, exc_type, exc, tb):
+        import traceback
+        log(f"EXCECAO EM CALLBACK TK: {exc_type.__name__}: {exc}")
+        log("".join(traceback.format_exception(exc_type, exc, tb)))
 
     def _install_error_hooks(self):
         def hook(exc_type, exc, tb):
