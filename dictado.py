@@ -75,6 +75,7 @@ MOD_NOREPEAT = 0x4000
 VK_Y = 0x59
 HOTKEY_ID = 0xB00B
 WATCHDOG_MS = 20000
+STATUS_REVERT_MS = 2000
 
 
 def log(msg):
@@ -458,7 +459,8 @@ class DictadoApp:
     def _schedule_revert(self):
         if self._revert_id is not None:
             self.root.after_cancel(self._revert_id)
-        self._revert_id = self.root.after(2500, self._do_revert)
+        self._revert_id = self.root.after(
+            STATUS_REVERT_MS, self._do_revert)
 
     def _do_revert(self):
         self._revert_id = None
@@ -469,10 +471,8 @@ class DictadoApp:
     def _tick_progress(self):
         if self.state != STATE_PROCESSING or self._progress_dur <= 0:
             return
-        if self._progress_dur < 1.5:
-            return
         elapsed = time.time() - self._progress_start
-        pct = max(2, min(97, int(elapsed / self._progress_dur * 100)))
+        pct = max(4, min(97, int(elapsed / self._progress_dur * 100)))
         self.view.set_progress(pct)
         self.root.after(200, self._tick_progress)
 

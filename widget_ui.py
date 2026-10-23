@@ -360,7 +360,7 @@ class Renderer:
 
         if idle_a > 0.001:
             self._draw_idle(idle, state, accent, cx1, cx2, cy1, cy2,
-                            spinner, pulse)
+                            spinner, pulse, progress)
             _alpha(idle, idle_a)
             base.alpha_composite(idle)
 
@@ -403,12 +403,25 @@ class Renderer:
         return out
 
     def _draw_idle(self, img, state, accent, cx1, cx2, cy1, cy2,
-                   spinner, pulse):
+                   spinner, pulse, progress=None):
         u = self.u
         cx = (cx1 + cx2) / 2.0
         cy = (cy1 + cy2) / 2.0
         d = ImageDraw.Draw(img)
         self._mic(d, cx, cy - 1.0, 1.0, (245, 245, 248, 245))
+
+        if state == STATE_PROCESSING:
+            pct = _clamp(float(progress or 0.0), 0.0, 100.0)
+            pct = max(2.0, pct)
+            rad = 26.0
+            box = [self._px(cx - rad), self._px(cy - rad),
+                   self._px(cx + rad), self._px(cy + rad)]
+            width = max(1, int(round(2.4 * u)))
+            d.arc(box, start=0, end=360, fill=(255, 159, 10, 45),
+                  width=width)
+            d.arc(box, start=-90.0, end=-90.0 + 360.0 * pct / 100.0,
+                  fill=accent + (245,), width=width)
+            return
 
         if state == STATE_LOADING:
             rad = 21.0
@@ -1215,11 +1228,14 @@ class NativeWidget:
         return self._hit_local(x, y)
 
     def _target_width(self):
-        if self.state in (STATE_RECORDING, STATE_PROCESSING):
+        if self.state == STATE_RECORDING:
             return float(EXPANDED_W)
+        if self.state == STATE_PROCESSING:
+            return float(IDLE_W)
         if self.state == STATE_ERROR:
             return float(EXPANDED_W)
-        if self.state == STATE_READY and self.hover > 0.01:
+        if (self.state == STATE_READY
+                and getattr(self, "hover", 0.0) > 0.01):
             return float(EXPANDED_W)
         if self.status:
             return float(EXPANDED_W)
