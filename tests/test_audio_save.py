@@ -21,6 +21,29 @@ class SaveTests(unittest.TestCase):
             self.assertEqual(data.shape, (1600,))
             self.assertEqual(data.dtype, np.float32)
 
+    def test_save_latest_clears_previous_wavs(self):
+        with tempfile.TemporaryDirectory() as td:
+            directory = Path(td)
+            old = directory / "20260101_120000_original.wav"
+            old.write_bytes(b"antigo")
+            audio_fx.save_test_audio(
+                np.zeros(1600, dtype=np.float32), 16000,
+                "ultimo_original", directory, clear_previous=True)
+            self.assertFalse(old.exists())
+            self.assertTrue((directory / "ultimo_original.wav").exists())
+
+    def test_processed_does_not_remove_original(self):
+        with tempfile.TemporaryDirectory() as td:
+            directory = Path(td)
+            audio = np.zeros(1600, dtype=np.float32)
+            audio_fx.save_test_audio(
+                audio, 16000, "ultimo_original", directory,
+                clear_previous=True)
+            audio_fx.save_test_audio(
+                audio, 16000, "ultimo_processado", directory)
+            self.assertTrue((directory / "ultimo_original.wav").exists())
+            self.assertTrue((directory / "ultimo_processado.wav").exists())
+
 
 class DictadoIntegrationTests(unittest.TestCase):
     def test_dictado_exposes_test_audio_dir_and_saver(self):

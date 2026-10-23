@@ -1334,7 +1334,8 @@ class DictadoApp:
 
     def _save_test_audio(self, audio, tag):
         return audio_fx.save_test_audio(
-            np.asarray(audio, dtype=np.float32), SAMPLE_RATE, tag, TEST_AUDIO_DIR
+            np.asarray(audio, dtype=np.float32), SAMPLE_RATE, tag,
+            TEST_AUDIO_DIR, clear_previous=(tag == "ultimo_original"),
         )
 
     def _job_loop(self):
@@ -1431,9 +1432,8 @@ class DictadoApp:
         return out
 
     def _process_job(self, audio):
-        stamp = time.strftime("%Y%m%d_%H%M%S")
         try:
-            self._save_test_audio(audio, f"{stamp}_original")
+            self._save_test_audio(audio, "ultimo_original")
         except Exception as exc:
             log(f"falha ao salvar audio original de teste: {exc}")
         if self.cfg.get("denoise", True):
@@ -1448,7 +1448,7 @@ class DictadoApp:
         except Exception as exc:
             log(f"normalizacao falhou; seguindo com audio sem normalizar: {exc}")
         try:
-            self._save_test_audio(audio, f"{stamp}_processado")
+            self._save_test_audio(audio, "ultimo_processado")
         except Exception as exc:
             log(f"falha ao salvar audio processado de teste: {exc}")
         total = len(audio)

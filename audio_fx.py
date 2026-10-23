@@ -343,7 +343,16 @@ def save_test_audio(
     sr: int,
     tag: str,
     directory: Path,
+    clear_previous: bool = False,
 ) -> Path:
-    path = Path(directory) / f"{tag}.wav"
+    directory = Path(directory)
+    if clear_previous:
+        directory.mkdir(parents=True, exist_ok=True)
+        for old in directory.glob("*.wav"):
+            try:
+                old.unlink()
+            except OSError:
+                pass
+    path = directory / f"{tag}.wav"
     save_wav(path, audio, sr)
     return path
