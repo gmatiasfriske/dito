@@ -12,9 +12,11 @@ import threading
 import time
 import tkinter as tk
 from collections import deque
+from pathlib import Path
 
 import numpy as np
 
+import audio_fx
 import widget_ui
 
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -58,6 +60,7 @@ ICON_PATH = os.path.join(RES_DIR, "dictado.ico")
 SPLASH_PATH = os.path.join(RES_DIR, "splash_ui.py")
 RECORDER_PATH = os.path.join(BASE_DIR, "mic_recorder.py")
 RPC_CFG_PATH = os.path.join(BASE_DIR, "dictado_rpc.json")
+TEST_AUDIO_DIR = Path(BASE_DIR) / "audios_teste"
 RPC_DEFAULT_PORT = 8765
 
 WM_PASTE = 0x0302
@@ -1283,6 +1286,11 @@ class DictadoApp:
         except Exception as exc:
             log(f"falha salvar audio: {exc}")
 
+    def _save_test_audio(self, audio, tag):
+        return audio_fx.save_test_audio(
+            np.asarray(audio, dtype=np.float32), SAMPLE_RATE, tag, TEST_AUDIO_DIR
+        )
+
     def _job_loop(self):
         while True:
             audio = self.jobs.get()
@@ -1377,8 +1385,23 @@ class DictadoApp:
         return out
 
     def _process_job(self, audio):
+        stamp = time.strftime("%Y%m%d_%H%M%S")
+        try:
+            self._save_test_audio(audio, f"{stamp}_original")
+        except Exception as exc:
+            log(f"falha ao salvar audio original de teste: {exc}")
         if self.cfg.get("denoise", True):
             audio = self._denoise(audio)
+        try:
+            audio = audio_fx.normalize_audio(
+                audio, SAMPLE_RATE,
+                sensitivity_db=0.0,  # Task 3 troca por self._gate_sensitivity_db()
+                strength="suave",
+                logger=log,
+            )
+            self._save_test_audio(audio, f"{stamp}_processado")
+        except Exception as exc:
+            log(f"normalizacao falhou; seguindo com audio sem normalizar: {exc}")
         total = len(audio)
         audio, had_voice = self._vad_trim(audio)
         if not had_voice:
