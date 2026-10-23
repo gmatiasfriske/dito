@@ -10,6 +10,8 @@ import ctypes
 import ctypes.wintypes as wt
 import math
 import os
+import queue
+import threading
 import time
 
 import numpy as np
@@ -78,6 +80,8 @@ WM_LBUTTONDBLCLK = 0x0203
 WM_RBUTTONDOWN = 0x0204
 WM_RBUTTONUP = 0x0205
 WM_CAPTURECHANGED = 0x0215
+WM_QUIT = 0x0012
+WH_MOUSE_LL = 14
 
 HTTRANSPARENT = -1
 HTCLIENT = 1
@@ -877,6 +881,11 @@ class NativeWidget:
         self._dragging = False
         self._drag_off = (0, 0)
         self._click_after = None
+        self._click_due = None
+        self._callbacks = queue.Queue()
+        self._mouse_hook = None
+        self._mouse_hook_proc = None
+        self._mouse_hook_tid = 0
         self._tick_id = None
         self._pump_id = None
         self._last_tick = time.perf_counter()
@@ -896,6 +905,7 @@ class NativeWidget:
                 self.show()
             self._pump_id = self.root.after(10, self._pump)
             self._tick_id = self.root.after(16, self._tick)
+            self._install_mouse_hook()
         except Exception:
             self.shutdown()
             raise
@@ -989,12 +999,123 @@ class NativeWidget:
         _WINDOWS[self._hwnd] = self
 
     def _call(self, fn):
+        # Nao chamar Tk de dentro do WndProc/ctypes: o callback e enfileirado
+        # e executado pela thread principal no proximo _pump.
         if self._dead or fn is None:
             return
+        self._callbacks.put(fn)
+
+    def _drain_callbacks(self):
+        while not self._dead:
+            try:
+                fn = self._callbacks.get_nowait()
+            except queue.Empty:
+                return
+            try:
+                fn()
+            except Exception as exc:
+                try:
+                    self.log(f"widget: erro em callback: {exc!r}")
+                except Exception:
+                    pass
+
+    def _handle_global_wheel(self, x, y, delta):
+        if self._dead or not self._hwnd or not self.on_sensitivity:
+            return False
         try:
-            self.root.after(0, fn)
+            rx, ry, rw, rh = self.rect()
         except Exception:
-            pass
+            return False
+        if not (rx <= x < rx + rw and ry <= y < ry + rh):
+            return False
+        try:
+            if self._hit_local(x - rx, y - ry) != "content":
+                return False
+        except Exception:
+            return False
+        self._call(lambda d=delta: self.on_sensitivity(d))
+        return True
+
+    def _install_mouse_hook(self):
+        # WM_MOUSEWHEEL vai para a janela com foco; a pilula e NOACTIVATE.
+        # Um hook global entrega a roda mesmo sem foco, mas roda numa thread
+        # propria e apenas enfileira o callback para o Tk.
+        def run():
+            try:
+                class MSLLHOOKSTRUCT(ctypes.Structure):
+                    _fields_ = [
+                        ("pt", wt.POINT),
+                        ("mouseData", wt.DWORD),
+                        ("flags", wt.DWORD),
+                        ("time", wt.DWORD),
+                        ("dwExtraInfo", ctypes.c_void_p),
+                    ]
+
+                hook_type = ctypes.WINFUNCTYPE(
+                    ctypes.c_ssize_t, ctypes.c_int, wt.WPARAM, wt.LPARAM)
+
+                def proc(n_code, wparam, lparam):
+                    try:
+                        if n_code >= 0 and int(wparam) == WM_MOUSEWHEEL:
+                            data = ctypes.cast(
+                                lparam, ctypes.POINTER(MSLLHOOKSTRUCT)).contents
+                            delta = ctypes.c_short(
+                                (data.mouseData >> 16) & 0xFFFF).value
+                            if self._handle_global_wheel(
+                                    data.pt.x, data.pt.y, delta):
+                                return 1
+                    except Exception:
+                        pass
+                    return user32.CallNextHookEx(
+                        None, n_code, wparam, lparam)
+
+                self._mouse_hook_proc = hook_type(proc)
+                user32.SetWindowsHookExW.argtypes = [
+                    ctypes.c_int, hook_type, ctypes.c_void_p, wt.DWORD]
+                user32.SetWindowsHookExW.restype = ctypes.c_void_p
+                user32.CallNextHookEx.argtypes = [
+                    ctypes.c_void_p, ctypes.c_int, wt.WPARAM, wt.LPARAM]
+                user32.CallNextHookEx.restype = ctypes.c_ssize_t
+                user32.UnhookWindowsHookEx.argtypes = [ctypes.c_void_p]
+                user32.UnhookWindowsHookEx.restype = wt.BOOL
+                user32.GetMessageW.argtypes = [
+                    ctypes.POINTER(wt.MSG), wt.HWND, wt.UINT, wt.UINT]
+                user32.GetMessageW.restype = wt.BOOL
+                user32.PostThreadMessageW.argtypes = [
+                    wt.DWORD, wt.UINT, wt.WPARAM, wt.LPARAM]
+                user32.PostThreadMessageW.restype = wt.BOOL
+                kernel32.GetCurrentThreadId.restype = wt.DWORD
+                self._mouse_hook_tid = kernel32.GetCurrentThreadId()
+                self._mouse_hook = user32.SetWindowsHookExW(
+                    WH_MOUSE_LL, self._mouse_hook_proc,
+                    kernel32.GetModuleHandleW(None), 0)
+                if not self._mouse_hook:
+                    self.log(f"hook da roda falhou "
+                             f"({ctypes.get_last_error()})")
+                    return
+                self.log("hook da roda: ativo")
+                msg = wt.MSG()
+                while not self._dead:
+                    ret = user32.GetMessageW(ctypes.byref(msg), None, 0, 0)
+                    if ret <= 0:
+                        break
+                    user32.TranslateMessage(ctypes.byref(msg))
+                    user32.DispatchMessageW(ctypes.byref(msg))
+            except Exception as exc:
+                try:
+                    self.log(f"hook da roda: {exc!r}")
+                except Exception:
+                    pass
+            finally:
+                if self._mouse_hook:
+                    try:
+                        user32.UnhookWindowsHookEx(self._mouse_hook)
+                    except Exception:
+                        pass
+                    self._mouse_hook = None
+
+        threading.Thread(
+            target=run, name="dictado-mouse-hook", daemon=True).start()
 
     def show(self):
         if self._hwnd:
@@ -1221,6 +1342,8 @@ class NativeWidget:
         if self._dead:
             return
         now = time.perf_counter()
+        if self._click_due is not None and now >= self._click_due:
+            self._fire_toggle()
         dt = _clamp(now - self._last_tick, 0.001, 0.12)
         self._last_tick = now
         self._poll_hover()
@@ -1322,6 +1445,7 @@ class NativeWidget:
                 ctypes.byref(msg), wt.HWND(self._hwnd), 0, 0, PM_REMOVE):
             user32.TranslateMessage(ctypes.byref(msg))
             user32.DispatchMessageW(ctypes.byref(msg))
+        self._drain_callbacks()
         self._pump_id = self.root.after(10, self._pump)
 
     def _on_message(self, msg, wparam, lparam):
@@ -1374,7 +1498,7 @@ class NativeWidget:
                 self._call(self.on_close)
             elif hit == "content":
                 self._cancel_click()
-                self._click_after = self.root.after(260, self._fire_toggle)
+                self._click_due = time.monotonic() + 0.26
             return 0
         if msg == WM_LBUTTONDBLCLK:
             hit = self._hit_from_lparam(lparam)
@@ -1401,15 +1525,10 @@ class NativeWidget:
             wt.HWND(self._hwnd), msg, wparam, lparam)
 
     def _cancel_click(self):
-        if self._click_after is not None:
-            try:
-                self.root.after_cancel(self._click_after)
-            except Exception:
-                pass
-            self._click_after = None
+        self._click_due = None
 
     def _fire_toggle(self):
-        self._click_after = None
+        self._click_due = None
         self._call(self.on_toggle)
 
     def _begin_drag(self):
@@ -1440,6 +1559,12 @@ class NativeWidget:
             return
         self._dead = True
         self._cancel_click()
+        if self._mouse_hook_tid:
+            try:
+                user32.PostThreadMessageW(
+                    self._mouse_hook_tid, WM_QUIT, 0, 0)
+            except Exception:
+                pass
         for attr in ("_tick_id", "_pump_id"):
             ident = getattr(self, attr, None)
             if ident is not None:
