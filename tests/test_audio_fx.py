@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -29,10 +30,10 @@ class GateTests(unittest.TestCase):
         self.assertLess(_rms(out[:SR // 2]), 1e-4)
         self.assertGreater(_rms(out[SR:SR * 2]), 0.05)
 
-    def test_gate_keeps_quiet_tone_at_high_sensitivity(self):
+    def test_gate_keeps_quiet_tone_when_floor_is_low(self):
         audio = np.zeros(SR * 3, dtype=np.float32)
         audio[SR:SR * 2] = _tone(1.0, amp=0.01)
-        out = audio_fx.gate_audio(audio, SR, sensitivity_db=-6.0)
+        out = audio_fx.gate_audio(audio, SR)
         self.assertGreater(_rms(out[SR:SR * 2]), 0.003)
 
     def test_gate_short_audio_returns_same_shape(self):
@@ -40,6 +41,11 @@ class GateTests(unittest.TestCase):
         out = audio_fx.gate_audio(audio, SR)
         self.assertEqual(out.shape, audio.shape)
         self.assertEqual(out.dtype, np.float32)
+
+    def test_gate_does_not_erase_continuous_tone(self):
+        audio = _tone(2.0, amp=0.012)
+        out = audio_fx.gate_audio(audio, SR)
+        self.assertGreater(_rms(out), _rms(audio) * 0.9)
 
 
 class MappingTests(unittest.TestCase):
@@ -86,6 +92,12 @@ class FfmpegTests(unittest.TestCase):
             out = audio_fx.normalize_audio(audio, SR)
         self.assertEqual(out.shape, audio.shape)
         self.assertTrue(np.isfinite(out).all())
+
+    def test_ffmpeg_runs_without_a_console_window(self):
+        with mock.patch("audio_fx.subprocess.run") as run:
+            audio_fx._run_ffmpeg(["ffmpeg", "-version"])
+        flags = run.call_args.kwargs.get("creationflags")
+        self.assertEqual(flags, getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
 if __name__ == "__main__":

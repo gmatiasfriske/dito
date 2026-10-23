@@ -46,6 +46,8 @@ class NativeWidgetCallbackTests(unittest.TestCase):
         seen = []
         widget = self._bare_widget()
         widget._hwnd = 123
+        widget.visible = True
+        widget.state = widget_ui.STATE_READY
         widget.on_sensitivity = seen.append
         widget.rect = lambda: (100, 100, 58, 58)
         widget._hit_local = lambda x, y: "content"
@@ -58,10 +60,38 @@ class NativeWidgetCallbackTests(unittest.TestCase):
         seen = []
         widget = self._bare_widget()
         widget._hwnd = 123
+        widget.visible = True
+        widget.state = widget_ui.STATE_READY
         widget.on_sensitivity = seen.append
         widget.rect = lambda: (100, 100, 58, 58)
         widget._hit_local = lambda x, y: "content"
         self.assertFalse(widget._handle_global_wheel(500, 500, 120))
+        widget._drain_callbacks()
+        self.assertEqual(seen, [])
+
+    def test_global_wheel_is_ignored_when_widget_is_hidden(self):
+        seen = []
+        widget = self._bare_widget()
+        widget._hwnd = 123
+        widget.visible = False
+        widget.state = widget_ui.STATE_READY
+        widget.on_sensitivity = seen.append
+        widget.rect = lambda: (100, 100, 58, 58)
+        widget._hit_local = lambda x, y: "content"
+        self.assertFalse(widget._handle_global_wheel(120, 120, 120))
+        widget._drain_callbacks()
+        self.assertEqual(seen, [])
+
+    def test_global_wheel_is_ignored_while_processing(self):
+        seen = []
+        widget = self._bare_widget()
+        widget._hwnd = 123
+        widget.visible = True
+        widget.state = widget_ui.STATE_PROCESSING
+        widget.on_sensitivity = seen.append
+        widget.rect = lambda: (100, 100, 58, 58)
+        widget._hit_local = lambda x, y: "content"
+        self.assertFalse(widget._handle_global_wheel(120, 120, 120))
         widget._drain_callbacks()
         self.assertEqual(seen, [])
 

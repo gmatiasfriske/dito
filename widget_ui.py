@@ -1033,7 +1033,9 @@ class NativeWidget:
                     pass
 
     def _handle_global_wheel(self, x, y, delta):
-        if self._dead or not self._hwnd or not self.on_sensitivity:
+        if (self._dead or not self._hwnd or not self.visible
+                or self.state not in (STATE_READY, STATE_RECORDING)
+                or not self.on_sensitivity or not delta):
             return False
         try:
             rx, ry, rw, rh = self.rect()
@@ -1514,7 +1516,7 @@ class NativeWidget:
                 self._call(self.on_close)
             elif hit == "content":
                 self._cancel_click()
-                self._click_due = time.monotonic() + 0.26
+                self._click_due = time.perf_counter() + 0.26
             return 0
         if msg == WM_LBUTTONDBLCLK:
             hit = self._hit_from_lparam(lparam)

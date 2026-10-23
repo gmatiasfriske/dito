@@ -1443,9 +1443,12 @@ class DictadoApp:
                 strength="suave",
                 logger=log,
             )
-            self._save_test_audio(audio, f"{stamp}_processado")
         except Exception as exc:
             log(f"normalizacao falhou; seguindo com audio sem normalizar: {exc}")
+        try:
+            self._save_test_audio(audio, f"{stamp}_processado")
+        except Exception as exc:
+            log(f"falha ao salvar audio processado de teste: {exc}")
         total = len(audio)
         audio, had_voice = self._vad_trim(audio)
         if not had_voice:

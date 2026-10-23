@@ -146,11 +146,22 @@ def gate_audio(
     audio: np.ndarray,
     sr: int,
     sensitivity_db: float = 0.0,
+    logger: Callable[[str], None] | None = None,
 ) -> np.ndarray:
     """Aplica o gate com fades lineares, preservando o comprimento."""
     x = _mono(audio)
     intervals = gate_intervals(x, sr, sensitivity_db)
     if not intervals:
+        return x.copy()
+
+    duration = x.size / float(sr) if sr > 0 else 0.0
+    covered = sum(
+        max(0.0, min(duration, end) - max(0.0, start))
+        for start, end in intervals
+    )
+    if duration > 0 and covered >= duration * 0.6:
+        if logger:
+            logger("gate: take continuo; mantendo o audio sem cortes")
         return x.copy()
 
     n = x.size
@@ -190,7 +201,11 @@ def _parse_loudnorm_json(stderr: str) -> dict | None:
 
 
 def _run_ffmpeg(args: list[str]) -> subprocess.CompletedProcess:
-    return subprocess.run(args, capture_output=True, text=True, timeout=120)
+    kwargs = {"capture_output": True, "text": True, "timeout": 120}
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    if flags:
+        kwargs["creationflags"] = flags
+    return subprocess.run(args, **kwargs)
 
 
 def loudnorm_audio(
@@ -220,7 +235,8 @@ def loudnorm_audio(
         sf.write(in_path, x, sr, subtype="PCM_16")
 
         measure_cmd = [
-            exe, "-hide_banner", "-nostats", "-i", in_path,
+            exe, "-hide_banner", "-nostats", "-loglevel", "error",
+            "-i", in_path,
             "-af", f"{chain}:print_format=json", "-f", "null", "-",
         ]
         measured = _run_ffmpeg(measure_cmd)
@@ -239,7 +255,8 @@ def loudnorm_audio(
         mi, mt, ml, mth = values
 
         apply_cmd = [
-            exe, "-hide_banner", "-nostats", "-y", "-i", in_path,
+            exe, "-hide_banner", "-nostats", "-loglevel", "error",
+            "-y", "-i", in_path,
             "-af",
             f"{chain}:measured_I={mi:.6f}:measured_TP={mt:.6f}:"
             f"measured_LRA={ml:.6f}:measured_thresh={mth:.6f}:linear=true",
@@ -275,7 +292,7 @@ def normalize_audio(
     logger: Callable[[str], None] | None = None,
 ) -> np.ndarray:
     """Gate + loudnorm; nunca levanta excecao para o chamador."""
-    gated = gate_audio(audio, sr, sensitivity_db)
+    gated = gate_audio(audio, sr, sensitivity_db, logger=logger)
     try:
         exe = find_ffmpeg()
         if not exe:
