@@ -360,7 +360,8 @@ class Renderer:
 
         if idle_a > 0.001:
             self._draw_idle(idle, state, accent, cx1, cx2, cy1, cy2,
-                            spinner, pulse, progress)
+                            spinner, pulse, progress,
+                            sens_level, sens_levels, sens_visible)
             _alpha(idle, idle_a)
             base.alpha_composite(idle)
 
@@ -403,7 +404,8 @@ class Renderer:
         return out
 
     def _draw_idle(self, img, state, accent, cx1, cx2, cy1, cy2,
-                   spinner, pulse, progress=None):
+                   spinner, pulse, progress=None,
+                   sens_level=4, sens_levels=7, sens_visible=False):
         u = self.u
         cx = (cx1 + cx2) / 2.0
         cy = (cy1 + cy2) / 2.0
@@ -462,6 +464,9 @@ class Renderer:
                  self._px(gx + dot), self._px(gy + dot)],
                 fill=accent + (245,),
             )
+            if sens_visible:
+                self._draw_sensitivity_mini(
+                    d, accent, cx, cy2, sens_level, sens_levels)
         elif state == STATE_ERROR:
             dot = 3.4
             gx = cx2 - 11.0
@@ -576,9 +581,27 @@ class Renderer:
         text = _truncate(d, text, f, self._px(max_w))
         d.text((self._px(cx1 + 36.0), self._px(cy + 0.3)), text,
                font=f, fill=(240, 240, 244, 232), anchor="lm")
-        if sens_visible:
-            self._draw_sensitivity(d, accent, cx1, cx2, cy2,
-                                   sens_level, sens_levels)
+
+    def _draw_sensitivity_mini(self, d, accent, cx, cy2, level, levels):
+        n = max(1, int(levels))
+        level = max(1, min(n, int(level)))
+        track_x1 = cx - 18.0
+        track_x2 = cx + 18.0
+        track_y = cy2 - 5.0
+        d.rounded_rectangle(
+            [self._px(track_x1), self._px(track_y - 0.7),
+             self._px(track_x2), self._px(track_y + 0.7)],
+            radius=self._px(0.7), fill=(255, 255, 255, 28),
+        )
+        for i in range(n):
+            frac = i / max(1, n - 1)
+            tx = track_x1 + (track_x2 - track_x1) * frac
+            active = (i + 1) <= level
+            d.ellipse(
+                [self._px(tx - 1.1), self._px(track_y - 1.1),
+                 self._px(tx + 1.1), self._px(track_y + 1.1)],
+                fill=accent + (235,) if active else (255, 255, 255, 45),
+            )
 
     def _draw_sensitivity(self, d, accent, cx1, cx2, cy2, level, levels):
         n = max(1, int(levels))
@@ -1238,9 +1261,6 @@ class NativeWidget:
             return float(IDLE_W)
         if self.state == STATE_ERROR:
             return float(EXPANDED_W)
-        if (self.state == STATE_READY
-                and getattr(self, "hover", 0.0) > 0.01):
-            return float(EXPANDED_W)
         if self.status:
             return float(EXPANDED_W)
         return float(IDLE_W)
@@ -1442,8 +1462,7 @@ class NativeWidget:
             pulse=self.pulse,
             sens_level=self.sens_level,
             sens_levels=self.sens_levels,
-            sens_visible=self.sens_visible or (
-                self.state == STATE_READY and self.hover),
+            sens_visible=self.sens_visible,
         )
         ok = self._surface.update(self._hwnd, img)
         if not ok:

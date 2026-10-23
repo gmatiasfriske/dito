@@ -77,9 +77,11 @@ ignorá-lo.
 | `x` (ao passar o mouse) | Fecha o app |
 | Rodinha do mouse sobre a pílula | Ajusta a sensibilidade (7 níveis) antes ou durante a gravação |
 
-Antes ou durante a gravação, passe o mouse sobre a pílula para abrir o
-controle e use a rodinha do mouse. O ajuste vale só nesta sessão e volta
-ao padrão quando o Dictado é reaberto. A onda acompanha o nível escolhido.
+Em repouso, os 7 pontinhos dentro do círculo mostram a sensibilidade
+atual; passe o mouse sobre a pílula e use a rodinha para ajustar. Durante
+a gravação, a barra completa aparece embaixo da onda. O ajuste vale só
+nesta sessão e volta ao padrão quando o Dictado é reaberto. A onda
+acompanha o nível escolhido.
 
 A janela é uma pílula escura arredondada no canto inferior direito,
 com ondas animadas durante a gravação. O indicador de estado muda de

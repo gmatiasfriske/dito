@@ -40,6 +40,29 @@ class RingTests(unittest.TestCase):
                        width=86, sens_visible=True)
         self.assertIsInstance(img, Image.Image)
 
+    def test_ready_hover_does_not_expand(self):
+        w = widget_ui.NativeWidget.__new__(widget_ui.NativeWidget)
+        w.state = widget_ui.STATE_READY
+        w.hover = 1.0
+        w.status = ""
+        self.assertEqual(w._target_width(), widget_ui.IDLE_W)
+
+    def test_ready_circle_shows_sensitivity_dots(self):
+        r = widget_ui.Renderer(0.8)
+
+        def green_count(img):
+            pixels = img.convert("RGBA").get_flattened_data()
+            return sum(1 for r_, g_, b_, a_ in pixels
+                       if g_ > 90 and r_ < 120 and b_ < 100 and a_ > 0)
+
+        low = r.render(state=widget_ui.STATE_READY,
+                       width=widget_ui.IDLE_W,
+                       sens_level=1, sens_visible=True)
+        high = r.render(state=widget_ui.STATE_READY,
+                        width=widget_ui.IDLE_W,
+                        sens_level=7, sens_visible=True)
+        self.assertGreater(green_count(high), green_count(low) + 5)
+
 
 if __name__ == "__main__":
     unittest.main()

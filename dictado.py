@@ -203,6 +203,7 @@ class DictadoApp:
             self.view, "settings_scale",
             getattr(self.view, "scale", 1.0))
         self.view.set_state(STATE_LOADING)
+        self.view.set_sensitivity(self.sens_level, SENS_LEVELS, True)
         if isinstance(self.view, widget_ui.NativeWidget):
             self._start_splash()
         else:
