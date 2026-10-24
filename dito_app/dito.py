@@ -66,8 +66,12 @@ ICON_PATH = os.path.join(BASE_DIR, "dito.ico")
 if not os.path.exists(ICON_PATH):
     ICON_PATH = os.path.join(RES_DIR, "dito.ico")
 SPLASH_PATH = os.path.join(RES_DIR, "splash_ui.py")
-RECORDER_PATH = (os.path.join(BASE_DIR, "mic_recorder.exe") if FROZEN
-                 else os.path.join(PACKAGE_DIR, "mic_recorder.py"))
+if FROZEN:
+    RECORDER_PATH = os.path.join(BASE_DIR, "mic_recorder.exe")
+    if not os.path.isfile(RECORDER_PATH):
+        RECORDER_PATH = os.path.join(RES_DIR, "mic_recorder.exe")
+else:
+    RECORDER_PATH = os.path.join(PACKAGE_DIR, "mic_recorder.py")
 RPC_CFG_PATH = os.path.join(BASE_DIR, "dito_rpc.json")
 RPC_DEFAULT_PORT = 8765
 
@@ -1099,7 +1103,7 @@ class DitoApp:
         try:
             flags = 0x08000000 if sys.platform == "win32" else 0
             if FROZEN:
-                recorder_exe = os.path.join(BASE_DIR, "mic_recorder.exe")
+                recorder_exe = RECORDER_PATH
                 if not os.path.isfile(recorder_exe):
                     log("gravador externo ausente no pacote; usando inline")
                     return None

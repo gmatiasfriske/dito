@@ -1,4 +1,6 @@
-# Dito — ditado por voz com CrisperWhisper
+# Dito 1.0 — ditado por voz com CrisperWhisper
+
+**Versão 1.0.0** — primeira versão estável.
 
 <p align="center">
   <img src="docs/preview.gif" width="448" alt="Dito parado, gravando, transcrevendo e colando o texto">
@@ -25,11 +27,21 @@ fala junto com o ruído.
 | **Transcrevendo** | **Texto colado** |
 | <img src="docs/preview-processing.png" width="360" alt="Dito transcrevendo, com anel laranja no círculo"> | <img src="docs/preview-result.png" width="360" alt="Dito mostrando o texto transcrito antes de recolher"> |
 
-## Instalação (Windows 10/11)
+## Versão portátil (Windows 10/11)
+
+A versão 1.0 é publicada como uma pasta portátil: **não precisa de Python**
+nem de instalar nada. Baixe o ZIP da Release, extraia a **pasta inteira** e
+execute `Dito.exe`. Mantenha `Dito.exe`, `mic_recorder.exe` e a pasta
+`_internal` juntos; copiar só o `Dito.exe` não funciona.
+
+Na primeira execução, o modelo (~2,9 GB) é baixado do HuggingFace. Depois
+disso, o app abre direto. É recomendada uma GPU NVIDIA; sem ela, o Dito cai
+automaticamente para CPU (mais lento). O pacote tem cerca de 4,6 GB.
+
+## Instalação a partir do código (Windows 10/11)
 
 Requisitos: Windows 10/11 64 bits, Python **3.11 ou 3.12** e, de
-preferência, uma GPU NVIDIA. O passo a passo curto também está em
-**este README**.
+preferência, uma GPU NVIDIA.
 
 ```bat
 py -3.11 -m venv .venv
@@ -52,6 +64,21 @@ runtime. Só mantenha o **driver da NVIDIA** atualizado.
 O `.venv` é local, ocupa cerca de 5 GB e **não deve ser enviado ao
 GitHub nem dentro de um ZIP**. Cada pessoa cria o dela; o `.gitignore`
 já o ignora.
+
+## Build do executável
+
+Com o `.venv` ativo e o PyInstaller instalado:
+
+```bat
+python -m pip install pyinstaller==6.22.3
+powershell -ExecutionPolicy Bypass -File packaging\build.ps1
+```
+
+O pacote sai em `dist\Dito\` (onedir, cerca de 4,6 GB). O script gera o
+`mic_recorder.exe` separado, copia para a pasta do app e cria o
+`SHA256.txt`. O GitHub Releases aceita no máximo 2 GB por arquivo; para
+publicar, divida o ZIP em partes ou use uma release com o pacote
+hospedado fora do GitHub.
 
 Na primeira abertura, o modelo (~2,9 GB) é baixado do HuggingFace. A
 pílula cinza fica girando enquanto carrega; quando ficar verde, está

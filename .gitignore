@@ -17,6 +17,7 @@ _test_err.txt
 # artefatos de build/teste
 build/
 dist/
+packaging/build.log
 
 # sistema
 .DS_Store

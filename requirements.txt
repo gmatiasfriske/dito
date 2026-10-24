@@ -1,6 +1,6 @@
 # Dependencias do Dito.
 # O PyTorch NAO fica aqui: instale a versao CUDA (NVIDIA) ou CPU antes
-# deste arquivo; o passo a passo esta em LEIA-ME.txt.
+# deste arquivo; o passo a passo esta no README.md.
 crisperwhisper[transformers]==2.0.3
 transformers==5.20.1
 accelerate==1.15.0
