@@ -82,7 +82,7 @@ A primeira execução pode demorar vários minutos.
 |---|---|
 | `Ctrl+Y` | Alterna gravar / parar e transcrever |
 | Clique | Alterna gravar / parar |
-| Duplo clique | Abre os controles de nível (silêncio/voz) |
+| Duplo clique | Abre os controles de nível e o idioma da transcrição |
 | Botão direito + arrastar | Move o quadradinho |
 | `copiar` (ao passar o mouse) | Copia a última transcrição para o clipboard |
 | `x` (ao passar o mouse) | Fecha o app |
@@ -93,6 +93,9 @@ atual; passe o mouse sobre a pílula e use a rodinha para ajustar. Durante
 a gravação, a barra completa aparece embaixo da onda. O ajuste vale só
 nesta sessão e volta ao padrão quando o Dito é reaberto. A onda
 acompanha o nível escolhido.
+
+No painel de controles, o seletor **Idioma da transcrição** oferece
+Português, English e Español. A escolha fica salva em `dito_config.json`.
 
 A janela é uma pílula escura arredondada no canto inferior direito,
 com ondas animadas durante a gravação. O indicador de estado muda de
