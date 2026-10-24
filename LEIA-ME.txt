@@ -24,7 +24,7 @@ Passo a passo (Prompt de Comando na pasta do Dictado):
    python -m pip install -r requirements.txt
 
 4. Abra o Dictado:
-   python dictado.py
+   python main.py
 
 Na primeira abertura, o modelo (~2,9 GB) sera baixado do HuggingFace.
 A pilula fica cinza/girando ate ficar verde. Isso pode demorar alguns minutos.

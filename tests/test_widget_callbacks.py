@@ -1,4 +1,4 @@
-import queue
+﻿import queue
 import sys
 import threading
 import unittest
@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import widget_ui
+from dictado_app import widget_ui
 
 
 class NativeWidgetCallbackTests(unittest.TestCase):
@@ -98,3 +98,4 @@ class NativeWidgetCallbackTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

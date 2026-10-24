@@ -1,11 +1,11 @@
-import sys
+﻿import sys
 import threading
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import ui_dispatch
+from dictado_app import ui_dispatch
 
 
 class UiDispatcherTests(unittest.TestCase):
@@ -64,3 +64,4 @@ class UiDispatcherTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

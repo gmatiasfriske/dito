@@ -1,10 +1,10 @@
-import threading
+﻿import threading
 import unittest
 from types import MethodType, SimpleNamespace
 
 import numpy as np
 
-import dictado
+from dictado_app import dictado
 
 SR = dictado.SAMPLE_RATE
 
@@ -53,3 +53,4 @@ class WaveformScaleTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

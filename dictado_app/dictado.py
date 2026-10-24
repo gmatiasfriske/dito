@@ -15,9 +15,12 @@ from collections import deque
 
 import numpy as np
 
-import audio_fx
-import ui_dispatch
-import widget_ui
+try:
+    from . import audio_fx, ui_dispatch, widget_ui
+except ImportError:  # permite rodar dictado.py diretamente, se necessario
+    import audio_fx
+    import ui_dispatch
+    import widget_ui
 
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 os.environ.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
@@ -52,15 +55,19 @@ STATE_PROCESSING = "processing"
 STATE_ERROR = "error"
 
 FROZEN = bool(getattr(sys, "frozen", False))
+PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = (os.path.dirname(os.path.abspath(sys.executable)) if FROZEN
-            else os.path.dirname(os.path.abspath(__file__)))
-RES_DIR = getattr(sys, "_MEIPASS", BASE_DIR) if FROZEN else BASE_DIR
+            else os.path.dirname(PACKAGE_DIR))
+RES_DIR = getattr(sys, "_MEIPASS", BASE_DIR) if FROZEN else PACKAGE_DIR
 LOG_PATH = os.path.join(BASE_DIR, "dictado.log")
 LAST_AUDIO_PATH = os.path.join(BASE_DIR, "dictado_ultimo.wav")
 CFG_PATH = os.path.join(BASE_DIR, "dictado_config.json")
-ICON_PATH = os.path.join(RES_DIR, "dictado.ico")
+ICON_PATH = os.path.join(BASE_DIR, "dictado.ico")
+if not os.path.exists(ICON_PATH):
+    ICON_PATH = os.path.join(RES_DIR, "dictado.ico")
 SPLASH_PATH = os.path.join(RES_DIR, "splash_ui.py")
-RECORDER_PATH = os.path.join(BASE_DIR, "mic_recorder.py")
+RECORDER_PATH = (os.path.join(BASE_DIR, "mic_recorder.exe") if FROZEN
+                 else os.path.join(PACKAGE_DIR, "mic_recorder.py"))
 RPC_CFG_PATH = os.path.join(BASE_DIR, "dictado_rpc.json")
 RPC_DEFAULT_PORT = 8765
 

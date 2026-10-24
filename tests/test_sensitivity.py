@@ -1,11 +1,11 @@
-import sys
+﻿import sys
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import audio_fx
-import widget_ui
+from dictado_app import audio_fx
+from dictado_app import widget_ui
 
 
 class SensitivityTests(unittest.TestCase):
@@ -45,3 +45,4 @@ class SliderStateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

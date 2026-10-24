@@ -29,7 +29,7 @@ py -3.11 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install torch==2.9.1 torchaudio==2.9.1 --index-url https://download.pytorch.org/whl/cu128
 python -m pip install -r requirements.txt
-python dictado.py
+python main.py
 ```
 
 Sem NVIDIA, troque a linha do PyTorch pelo índice de CPU:
@@ -150,7 +150,7 @@ antes da transcrição (ganho até ×4).
   o `LEIA-ME.txt`; caminhos absolutos do ambiente antigo deixam de valer.
 - **Transcrição lenta**: o modelo roda em fp16 na GPU; frases curtas
   levam < 1 s. Se estiver em CPU, considere trocar `MODEL_SIZE` para
-  `"small"` no topo de `dictado.py`.
+  `"small"` no topo de `dictado_app/dictado.py`.
 - **Apps com `Ctrl+Shift+V`** (ex.: Windows Terminal): o app usa `Ctrl+V`;
   para esses, use o atalho de colar do próprio app ou ajuste a linha
   `keyboard.send("ctrl+v")` para `ctrl+shift+v`.

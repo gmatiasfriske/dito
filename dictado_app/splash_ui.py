@@ -12,9 +12,11 @@ import sys
 import threading
 import tkinter as tk
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import widget_ui
+try:
+    from . import widget_ui
+except ImportError:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import widget_ui
 
 
 def main(argv=None):

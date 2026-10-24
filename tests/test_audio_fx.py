@@ -1,4 +1,4 @@
-import subprocess
+﻿import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -8,7 +8,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import audio_fx
+from dictado_app import audio_fx
 
 SR = 16000
 
@@ -88,13 +88,13 @@ class FfmpegTests(unittest.TestCase):
 
     def test_normalize_falls_back_when_ffmpeg_is_missing(self):
         audio = _tone(0.5)
-        with mock.patch("audio_fx.find_ffmpeg", return_value=None):
+        with mock.patch("dictado_app.audio_fx.find_ffmpeg", return_value=None):
             out = audio_fx.normalize_audio(audio, SR)
         self.assertEqual(out.shape, audio.shape)
         self.assertTrue(np.isfinite(out).all())
 
     def test_ffmpeg_runs_without_a_console_window(self):
-        with mock.patch("audio_fx.subprocess.run") as run:
+        with mock.patch("dictado_app.audio_fx.subprocess.run") as run:
             audio_fx._run_ffmpeg(["ffmpeg", "-version"])
         flags = run.call_args.kwargs.get("creationflags")
         self.assertEqual(flags, getattr(subprocess, "CREATE_NO_WINDOW", 0))
@@ -102,3 +102,4 @@ class FfmpegTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import unittest
 from pathlib import Path
 
@@ -6,7 +6,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import widget_ui
+from dictado_app import widget_ui
 
 
 class TargetWidthTests(unittest.TestCase):
@@ -66,3 +66,4 @@ class RingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

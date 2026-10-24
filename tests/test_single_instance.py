@@ -1,7 +1,7 @@
-import unittest
+﻿import unittest
 from unittest import mock
 
-import dictado
+from dictado_app import dictado
 
 
 class FakeProc:
@@ -74,3 +74,4 @@ class SingleInstanceTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
