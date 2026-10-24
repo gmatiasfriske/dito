@@ -453,7 +453,7 @@ class Renderer:
         elif state == STATE_READY:
             dot = 3.0 + 0.4 * pulse
             gx = cx2 - 11.0
-            gy = cy2 - 11.0
+            gy = cy1 + 11.0
             d.ellipse(
                 [self._px(gx - dot * 2.1), self._px(gy - dot * 2.1),
                  self._px(gx + dot * 2.1), self._px(gy + dot * 2.1)],
@@ -585,13 +585,13 @@ class Renderer:
     def _draw_sensitivity_mini(self, d, accent, cx, cy2, level, levels):
         n = max(1, int(levels))
         level = max(1, min(n, int(level)))
-        track_x1 = cx - 18.0
-        track_x2 = cx + 18.0
-        track_y = cy2 - 5.0
+        track_x1 = cx - 14.0
+        track_x2 = cx + 14.0
+        track_y = cy2 - 9.0
         d.rounded_rectangle(
             [self._px(track_x1), self._px(track_y - 0.7),
              self._px(track_x2), self._px(track_y + 0.7)],
-            radius=self._px(0.7), fill=(255, 255, 255, 28),
+            radius=self._px(0.7), fill=(255, 255, 255, 42),
         )
         for i in range(n):
             frac = i / max(1, n - 1)
@@ -600,7 +600,7 @@ class Renderer:
             d.ellipse(
                 [self._px(tx - 1.1), self._px(track_y - 1.1),
                  self._px(tx + 1.1), self._px(track_y + 1.1)],
-                fill=accent + (235,) if active else (255, 255, 255, 45),
+                fill=accent + (235,) if active else (255, 255, 255, 90),
             )
 
     def _draw_sensitivity(self, d, accent, cx1, cx2, cy2, level, levels):

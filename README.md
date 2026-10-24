@@ -1,7 +1,7 @@
 # Dictado — ditado por voz com CrisperWhisper
 
 <p align="center">
-  <img src="docs/preview.png" width="448" alt="Pílula do Dictado gravando">
+  <img src="docs/preview.gif" width="448" alt="Dictado parado, gravando, transcrevendo e colando o texto">
 </p>
 
 Pílula sempre no topo da tela. Pressione **Ctrl+Y** para começar a
@@ -16,6 +16,14 @@ gravação, preservando fala baixa e ignorando ruído). A opção
 "Redução de ruído" do painel existe e pode ser desligada quando o
 microfone já tiver pouco ruído; em volumes baixos ela pode atenuar a
 fala junto com o ruído.
+
+## Capturas
+
+| Parado | Gravando |
+|:---:|:---:|
+| <img src="docs/preview-idle.png" width="360" alt="Dictado parado, com os 7 pontinhos de sensibilidade"> | <img src="docs/preview-recording.png" width="360" alt="Dictado gravando, com onda e barra de sensibilidade"> |
+| **Transcrevendo** | **Texto colado** |
+| <img src="docs/preview-processing.png" width="360" alt="Dictado transcrevendo, com anel laranja no círculo"> | <img src="docs/preview-result.png" width="360" alt="Dictado mostrando o texto transcrito antes de recolher"> |
 
 ## Instalação (Windows 10/11)
 
