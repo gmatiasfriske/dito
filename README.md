@@ -17,34 +17,11 @@ gravação, preservando fala baixa e ignorando ruído). A opção
 microfone já tiver pouco ruído; em volumes baixos ela pode atenuar a
 fala junto com o ruído.
 
-## Instalação fácil (Windows 10/11)
+## Instalação (Windows 10/11)
 
-1. Baixe o projeto pelo GitHub (`Code > Download ZIP`) e **extraia** em
-   uma pasta sua, como Downloads, Documentos ou Desktop.
-2. Dê dois cliques em **`1-INSTALAR-PRIMEIRO.bat`**.
-3. O instalador cria um ambiente isolado `.venv`, instala o PyTorch (com
-   CUDA se encontrar uma placa NVIDIA), instala as dependências e cria o
-   atalho **Dictado** na Área de Trabalho. A pasta `.venv` ocupa cerca de
-   5 GB; ela é local e não deve ser compartilhada.
-4. Abra pelo atalho ou por **`2-ABRIR-DICTADO.bat`**.
-
-Na primeira abertura, o modelo (~2 GB em fp16) é baixado do HuggingFace.
-A pílula cinza fica girando enquanto carrega; quando ficar verde, está
-pronto. Se a GPU falhar, o app cai automaticamente para CPU (mais lento).
-A primeira execução pode demorar vários minutos.
-
-Se o Python não estiver instalado, o instalador tenta instalar o Python
-3.11 automaticamente pelo `winget`. Se não conseguir, ele abre a página
-do Python e explica o que marcar.
-
-Não é necessário instalar o CUDA Toolkit separado: o PyTorch já traz o
-runtime. Só mantenha o **driver da NVIDIA** atualizado.
-
-Para ver mensagens de erro, use **`3-DIAGNOSTICO.bat`**.
-
-### Instalação manual (avançado)
-
-Requer Python **3.11 ou 3.12** 64 bits e uma GPU NVIDIA recomendada.
+Requisitos: Windows 10/11 64 bits, Python **3.11 ou 3.12** e, de
+preferência, uma GPU NVIDIA. O passo a passo curto também está em
+**`LEIA-ME.txt`**.
 
 ```bat
 py -3.11 -m venv .venv
@@ -61,9 +38,17 @@ Sem NVIDIA, troque a linha do PyTorch pelo índice de CPU:
 python -m pip install torch==2.9.1 torchaudio==2.9.1 --index-url https://download.pytorch.org/whl/cpu
 ```
 
-O `.venv` é local e **não deve ser enviado ao GitHub nem dentro de um
-ZIP**. Cada pessoa cria o dela; o `.gitignore` já está configurado para
-ignorá-lo.
+Não é necessário instalar o CUDA Toolkit separado: o PyTorch já traz o
+runtime. Só mantenha o **driver da NVIDIA** atualizado.
+
+O `.venv` é local, ocupa cerca de 5 GB e **não deve ser enviado ao
+GitHub nem dentro de um ZIP**. Cada pessoa cria o dela; o `.gitignore`
+já o ignora.
+
+Na primeira abertura, o modelo (~2,9 GB) é baixado do HuggingFace. A
+pílula cinza fica girando enquanto carrega; quando ficar verde, está
+pronto. Se a GPU falhar, o app cai automaticamente para CPU (mais lento).
+A primeira execução pode demorar vários minutos.
 
 ## Uso
 
@@ -156,14 +141,13 @@ antes da transcrição (ganho até ×4).
 
 - **Python não encontrado**: instale o Python 3.11 em
   [python.org/downloads](https://www.python.org/downloads/) e marque
-  **Add python.exe to PATH**; depois rode `1-INSTALAR-PRIMEIRO.bat`
-  novamente.
+  **Add python.exe to PATH**; depois siga o `LEIA-ME.txt` novamente.
 - **Instalação interrompida ou corrompida**: feche o app, apague a pasta
-  `.venv` e rode `1-INSTALAR-PRIMEIRO.bat` de novo.
-- **PyTorch sem CUDA**: atualize o driver da NVIDIA e rode o instalador
-  novamente. Para ver o diagnóstico completo, use `3-DIAGNOSTICO.bat`.
-- **Mudei a pasta do projeto**: rode `1-INSTALAR-PRIMEIRO.bat` de novo
-  para recriar o atalho da Área de Trabalho.
+  `.venv` e repita os comandos do `LEIA-ME.txt`.
+- **PyTorch sem CUDA**: atualize o driver da NVIDIA e repita a instalação
+  do PyTorch com o índice CUDA. O `dictado.log` mostra o que aconteceu.
+- **Mudei a pasta do projeto**: recrie o `.venv` na nova pasta seguindo
+  o `LEIA-ME.txt`; caminhos absolutos do ambiente antigo deixam de valer.
 - **Transcrição lenta**: o modelo roda em fp16 na GPU; frases curtas
   levam < 1 s. Se estiver em CPU, considere trocar `MODEL_SIZE` para
   `"small"` no topo de `dictado.py`.

@@ -15,11 +15,9 @@ dictado_rpc.json
 _test_out.txt
 _test_err.txt
 
-# scratch do superpowers e artefatos de build/teste
-.superpowers/
+# artefatos de build/teste
 build/
 dist/
-audios_teste/
 
 # sistema
 .DS_Store

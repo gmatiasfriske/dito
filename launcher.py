@@ -24,7 +24,7 @@ def main():
                 None,
                 "Nao foi possivel iniciar o Dictado.\n\n"
                 f"{exc}\n\n"
-                "Use o diagnostico para ver o log.",
+                "Veja dictado.log para mais detalhes.",
                 "Dictado", 0x10 | 0x40000,
             )
         except Exception:

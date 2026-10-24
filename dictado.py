@@ -12,7 +12,6 @@ import threading
 import time
 import tkinter as tk
 from collections import deque
-from pathlib import Path
 
 import numpy as np
 
@@ -63,7 +62,6 @@ ICON_PATH = os.path.join(RES_DIR, "dictado.ico")
 SPLASH_PATH = os.path.join(RES_DIR, "splash_ui.py")
 RECORDER_PATH = os.path.join(BASE_DIR, "mic_recorder.py")
 RPC_CFG_PATH = os.path.join(BASE_DIR, "dictado_rpc.json")
-TEST_AUDIO_DIR = Path(BASE_DIR) / "audios_teste"
 RPC_DEFAULT_PORT = 8765
 
 WM_PASTE = 0x0302
@@ -1332,12 +1330,6 @@ class DictadoApp:
         except Exception as exc:
             log(f"falha salvar audio: {exc}")
 
-    def _save_test_audio(self, audio, tag):
-        return audio_fx.save_test_audio(
-            np.asarray(audio, dtype=np.float32), SAMPLE_RATE, tag,
-            TEST_AUDIO_DIR, clear_previous=(tag == "ultimo_original"),
-        )
-
     def _job_loop(self):
         while True:
             audio = self.jobs.get()
@@ -1432,10 +1424,6 @@ class DictadoApp:
         return out
 
     def _process_job(self, audio):
-        try:
-            self._save_test_audio(audio, "ultimo_original")
-        except Exception as exc:
-            log(f"falha ao salvar audio original de teste: {exc}")
         if self.cfg.get("denoise", True):
             audio = self._denoise(audio)
         try:
@@ -1447,10 +1435,6 @@ class DictadoApp:
             )
         except Exception as exc:
             log(f"normalizacao falhou; seguindo com audio sem normalizar: {exc}")
-        try:
-            self._save_test_audio(audio, "ultimo_processado")
-        except Exception as exc:
-            log(f"falha ao salvar audio processado de teste: {exc}")
         total = len(audio)
         audio, had_voice = self._vad_trim(audio)
         if not had_voice:

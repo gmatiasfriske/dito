@@ -332,27 +332,4 @@ def next_sensitivity_level(level: int, delta: int) -> int:
     return int(_clamp(current + step, 1, 7))
 
 
-def save_wav(path: Path, audio: np.ndarray, sr: int) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    sf.write(str(path), _mono(audio), sr, subtype="PCM_16")
 
-
-def save_test_audio(
-    audio: np.ndarray,
-    sr: int,
-    tag: str,
-    directory: Path,
-    clear_previous: bool = False,
-) -> Path:
-    directory = Path(directory)
-    if clear_previous:
-        directory.mkdir(parents=True, exist_ok=True)
-        for old in directory.glob("*.wav"):
-            try:
-                old.unlink()
-            except OSError:
-                pass
-    path = directory / f"{tag}.wav"
-    save_wav(path, audio, sr)
-    return path
