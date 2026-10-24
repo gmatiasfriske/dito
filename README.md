@@ -27,18 +27,7 @@ fala junto com o ruído.
 | **Transcrevendo** | **Texto colado** |
 | <img src="docs/preview-processing.png" width="360" alt="Dito transcrevendo, com anel laranja no círculo"> | <img src="docs/preview-result.png" width="360" alt="Dito mostrando o texto transcrito antes de recolher"> |
 
-## Versão portátil (Windows 10/11)
-
-A versão 1.0 é publicada como uma pasta portátil: **não precisa de Python**
-nem de instalar nada. Baixe o ZIP da Release, extraia a **pasta inteira** e
-execute `Dito.exe`. Mantenha `Dito.exe`, `mic_recorder.exe` e a pasta
-`_internal` juntos; copiar só o `Dito.exe` não funciona.
-
-Na primeira execução, o modelo (~2,9 GB) é baixado do HuggingFace. Depois
-disso, o app abre direto. É recomendada uma GPU NVIDIA; sem ela, o Dito cai
-automaticamente para CPU (mais lento). O pacote tem cerca de 4,6 GB.
-
-## Instalação a partir do código (Windows 10/11)
+## Instalação (Windows 10/11)
 
 Requisitos: Windows 10/11 64 bits, Python **3.11 ou 3.12** e, de
 preferência, uma GPU NVIDIA.
@@ -65,9 +54,11 @@ O `.venv` é local, ocupa cerca de 5 GB e **não deve ser enviado ao
 GitHub nem dentro de um ZIP**. Cada pessoa cria o dela; o `.gitignore`
 já o ignora.
 
-## Build do executável
+## Build opcional do executável (desenvolvedores)
 
-Com o `.venv` ativo e o PyInstaller instalado:
+O pacote não é distribuído no repositório; o código-fonte é o modo
+recomendado. Se um dia quiser gerar o executável, com o `.venv` ativo e o
+PyInstaller instalado:
 
 ```bat
 python -m pip install pyinstaller==6.22.3
