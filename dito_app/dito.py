@@ -17,7 +17,7 @@ import numpy as np
 
 try:
     from . import audio_fx, ui_dispatch, widget_ui
-except ImportError:  # permite rodar dictado.py diretamente, se necessario
+except ImportError:  # permite rodar dito.py diretamente, se necessario
     import audio_fx
     import ui_dispatch
     import widget_ui
@@ -59,16 +59,16 @@ PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = (os.path.dirname(os.path.abspath(sys.executable)) if FROZEN
             else os.path.dirname(PACKAGE_DIR))
 RES_DIR = getattr(sys, "_MEIPASS", BASE_DIR) if FROZEN else PACKAGE_DIR
-LOG_PATH = os.path.join(BASE_DIR, "dictado.log")
-LAST_AUDIO_PATH = os.path.join(BASE_DIR, "dictado_ultimo.wav")
-CFG_PATH = os.path.join(BASE_DIR, "dictado_config.json")
-ICON_PATH = os.path.join(BASE_DIR, "dictado.ico")
+LOG_PATH = os.path.join(BASE_DIR, "dito.log")
+LAST_AUDIO_PATH = os.path.join(BASE_DIR, "dito_ultimo.wav")
+CFG_PATH = os.path.join(BASE_DIR, "dito_config.json")
+ICON_PATH = os.path.join(BASE_DIR, "dito.ico")
 if not os.path.exists(ICON_PATH):
-    ICON_PATH = os.path.join(RES_DIR, "dictado.ico")
+    ICON_PATH = os.path.join(RES_DIR, "dito.ico")
 SPLASH_PATH = os.path.join(RES_DIR, "splash_ui.py")
 RECORDER_PATH = (os.path.join(BASE_DIR, "mic_recorder.exe") if FROZEN
                  else os.path.join(PACKAGE_DIR, "mic_recorder.py"))
-RPC_CFG_PATH = os.path.join(BASE_DIR, "dictado_rpc.json")
+RPC_CFG_PATH = os.path.join(BASE_DIR, "dito_rpc.json")
 RPC_DEFAULT_PORT = 8765
 
 WM_PASTE = 0x0302
@@ -154,7 +154,7 @@ class GUITHREADINFO(ctypes.Structure):
     ]
 
 
-class DictadoApp:
+class DitoApp:
     def __init__(self, root):
         self.root = root
         self.state = STATE_LOADING
@@ -256,7 +256,7 @@ class DictadoApp:
                 stdin = subprocess.PIPE
             creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
             env = os.environ.copy()
-            env["DICTADO_PARENT_PID"] = str(os.getpid())
+            env["DITO_PARENT_PID"] = str(os.getpid())
             self._splash_proc = subprocess.Popen(
                 cmd,
                 stdin=stdin,
@@ -1119,7 +1119,7 @@ class DictadoApp:
         threading.Thread(
             target=self._recorder_reader, args=(proc,), daemon=True).start()
         # erros do gravador externo iam para stderr oculto (invisivel);
-        # agora sao registrados no dictado.log
+        # agora sao registrados no dito.log
         threading.Thread(
             target=self._log_recorder_stderr, args=(proc,), daemon=True).start()
         return proc
@@ -1534,7 +1534,7 @@ class DictadoApp:
             with open(RPC_CFG_PATH, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception as exc:
-            log(f"falha salvar dictado_rpc.json: {exc}")
+            log(f"falha salvar dito_rpc.json: {exc}")
         return int(data["port"]), data["token"]
 
     def _transcribe_audio(self, audio, idioma=None):
@@ -1843,7 +1843,7 @@ class DictadoApp:
             server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
             server.daemon_threads = True
             log(f"api local de transcricao: http://127.0.0.1:{port} "
-                f"(token em dictado_rpc.json)")
+                f"(token em dito_rpc.json)")
             server.serve_forever()
         except Exception as exc:
             log(f"falha api local: {exc}")
@@ -2029,11 +2029,11 @@ class DictadoApp:
 _SINGLE_MUTEX = None
 
 
-def _other_dictado_process():
+def _other_dito_process():
     """Detecta uma instancia antiga que ainda nao tem o mutex novo.
 
     Ignora os processos ancestrais. O launcher do venv no Windows aparece
-    como pythonw.exe com o mesmo dictado.py na linha de comando e seria
+    como pythonw.exe com o mesmo dito.py na linha de comando e seria
     confundido com uma segunda instancia.
     """
     try:
@@ -2046,7 +2046,7 @@ def _other_dictado_process():
         ancestors.update(p.pid for p in psutil.Process(me).parents())
     except Exception:
         pass
-    nomes = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe", "dictado.exe"}
+    nomes = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe", "dito.exe"}
     try:
         for proc in psutil.process_iter(["pid", "name", "cmdline"]):
             try:
@@ -2058,7 +2058,7 @@ def _other_dictado_process():
                     continue
                 cmd = proc.info.get("cmdline") or []
                 low = [str(part).lower() for part in cmd]
-                if any(part.endswith(("dictado.py", "dictado.exe"))
+                if any(part.endswith(("dito.py", "dito.exe"))
                        for part in low):
                     return True
             except Exception:
@@ -2071,13 +2071,13 @@ def _other_dictado_process():
 def _show_already_open():
     ctypes.windll.user32.MessageBoxW(
         None,
-        "O Dictado ja esta aberto.\n\n"
+        "O Dito ja esta aberto.\n\n"
         "Procure a pilula no canto da tela.",
-        "Dictado", 0x40 | 0x40000)
+        "Dito", 0x40 | 0x40000)
 
 
 def _single_instance_guard():
-    """Impede duas instancias do Dictado (duas GPUs/hotkeys iguais)."""
+    """Impede duas instancias do Dito (duas GPUs/hotkeys iguais)."""
     global _SINGLE_MUTEX
     try:
         kernel32 = ctypes.windll.kernel32
@@ -2085,13 +2085,13 @@ def _single_instance_guard():
             ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
         kernel32.CreateMutexW.restype = ctypes.c_void_p
         handle = kernel32.CreateMutexW(
-            None, False, "Local\\DictadoSingleInstance_v1")
+            None, False, "Local\\DitoSingleInstance_v1")
         if not handle:
             return True
         if kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
             _show_already_open()
             return False
-        if _other_dictado_process():
+        if _other_dito_process():
             _show_already_open()
             return False
         _SINGLE_MUTEX = handle
@@ -2110,7 +2110,7 @@ def main():
             open(LOG_PATH, "a", encoding="utf-8"))
     except Exception:
         pass
-    print("===== DICTADO =====", flush=True)
+    print("===== DITO =====", flush=True)
     print("Iniciando... carregando modelo (na 1a vez pode demorar/baixar).", flush=True)
     widget_ui.enable_dpi_awareness()
     root = tk.Tk()
@@ -2120,7 +2120,7 @@ def main():
         pass
     root.withdraw()
     widget_ui.configure_tk_scaling(root, widget_ui.system_scale())
-    app = DictadoApp(root)
+    app = DitoApp(root)
     app._install_error_hooks()
     root.mainloop()
 

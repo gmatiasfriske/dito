@@ -5,10 +5,10 @@ __pycache__/
 *.pyo
 
 # dados pessoais e logs gerados em tempo de execucao
-dictado.log
-dictado_ultimo.wav
-dictado_config.json
-dictado_rpc.json
+dito.log
+dito_ultimo.wav
+dito_config.json
+dito_rpc.json
 *.bak
 *.bak-*
 _test_out.txt

@@ -1,7 +1,7 @@
-"""Ponto de entrada do Dictado empacotado.
+"""Ponto de entrada do Dito empacotado.
 
 O mesmo executavel tambem roda como splash de carregamento:
-    Dictado.exe --splash 0.8
+    Dito.exe --splash 0.8
 Assim a animacao fica em outro processo sem precisar de um segundo exe.
 """
 import os
@@ -19,9 +19,9 @@ def main():
             splash_main(args[1:])
             return
         try:
-            from .dictado import main as app_main
+            from .dito import main as app_main
         except ImportError:
-            from dictado import main as app_main
+            from dito import main as app_main
         app_main()
     except Exception as exc:
         import traceback
@@ -29,10 +29,10 @@ def main():
             import ctypes
             ctypes.windll.user32.MessageBoxW(
                 None,
-                "Nao foi possivel iniciar o Dictado.\n\n"
+                "Nao foi possivel iniciar o Dito.\n\n"
                 f"{exc}\n\n"
-                "Veja dictado.log para mais detalhes.",
-                "Dictado", 0x10 | 0x40000,
+                "Veja dito.log para mais detalhes.",
+                "Dito", 0x10 | 0x40000,
             )
         except Exception:
             pass
@@ -42,7 +42,7 @@ def main():
                 base = os.path.dirname(sys.executable)
             else:
                 base = os.path.dirname(base)
-            with open(os.path.join(base, "dictado_falha_inicio.txt"), "a",
+            with open(os.path.join(base, "dito_falha_inicio.txt"), "a",
                       encoding="utf-8") as f:
                 f.write(traceback.format_exc() + "\n")
         except Exception:

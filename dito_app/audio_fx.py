@@ -1,4 +1,4 @@
-"""Processamento de audio do Dictado: gate de silencio e loudnorm.
+"""Processamento de audio do Dito: gate de silencio e loudnorm.
 
 O gate e uma porta simples baseada em RMS; o loudnorm usa a mesma cadeia
 do editor (compressor + EBU R128 dual-pass) via ffmpeg.
@@ -53,7 +53,7 @@ def _mono(audio: np.ndarray) -> np.ndarray:
 @lru_cache(maxsize=1)
 def find_ffmpeg() -> str | None:
     """Retorna o primeiro ffmpeg disponivel, ou None."""
-    env = os.environ.get("DICTADO_FFMPEG")
+    env = os.environ.get("DITO_FFMPEG")
     if env and Path(env).is_file():
         return str(Path(env))
     try:

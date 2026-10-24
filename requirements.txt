@@ -1,4 +1,4 @@
-# Dependencias do Dictado.
+# Dependencias do Dito.
 # O PyTorch NAO fica aqui: instale a versao CUDA (NVIDIA) ou CPU antes
 # deste arquivo; o passo a passo esta em LEIA-ME.txt.
 crisperwhisper[transformers]==2.0.3

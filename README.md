@@ -1,7 +1,7 @@
-# Dictado — ditado por voz com CrisperWhisper
+# Dito — ditado por voz com CrisperWhisper
 
 <p align="center">
-  <img src="docs/preview.gif" width="448" alt="Dictado parado, gravando, transcrevendo e colando o texto">
+  <img src="docs/preview.gif" width="448" alt="Dito parado, gravando, transcrevendo e colando o texto">
 </p>
 
 Pílula sempre no topo da tela. Pressione **Ctrl+Y** para começar a
@@ -21,9 +21,9 @@ fala junto com o ruído.
 
 | Parado | Gravando |
 |:---:|:---:|
-| <img src="docs/preview-idle.png" width="360" alt="Dictado parado, com os 7 pontinhos de sensibilidade"> | <img src="docs/preview-recording.png" width="360" alt="Dictado gravando, com onda e barra de sensibilidade"> |
+| <img src="docs/preview-idle.png" width="360" alt="Dito parado, com os 7 pontinhos de sensibilidade"> | <img src="docs/preview-recording.png" width="360" alt="Dito gravando, com onda e barra de sensibilidade"> |
 | **Transcrevendo** | **Texto colado** |
-| <img src="docs/preview-processing.png" width="360" alt="Dictado transcrevendo, com anel laranja no círculo"> | <img src="docs/preview-result.png" width="360" alt="Dictado mostrando o texto transcrito antes de recolher"> |
+| <img src="docs/preview-processing.png" width="360" alt="Dito transcrevendo, com anel laranja no círculo"> | <img src="docs/preview-result.png" width="360" alt="Dito mostrando o texto transcrito antes de recolher"> |
 
 ## Instalação (Windows 10/11)
 
@@ -73,7 +73,7 @@ A primeira execução pode demorar vários minutos.
 Em repouso, os 7 pontinhos dentro do círculo mostram a sensibilidade
 atual; passe o mouse sobre a pílula e use a rodinha para ajustar. Durante
 a gravação, a barra completa aparece embaixo da onda. O ajuste vale só
-nesta sessão e volta ao padrão quando o Dictado é reaberto. A onda
+nesta sessão e volta ao padrão quando o Dito é reaberto. A onda
 acompanha o nível escolhido.
 
 A janela é uma pílula escura arredondada no canto inferior direito,
@@ -115,11 +115,11 @@ suave (sobem rápido, descem devagar — sem tremida).
 **Duplo clique** na pílula abre o painel de níveis: dois controles
 ("Silêncio" e "Voz") com medidor ao vivo — fale e ajuste para o ruído
 do ambiente ficar abaixo do marcador de silêncio. Os valores ficam
-salvos em `dictado_config.json`. O ruído e a música baixa abaixo do
+salvos em `dito_config.json`. O ruído e a música baixa abaixo do
 nível de silêncio são **ignorados**: só o trecho de fala é transcrito
 (corte com histerese e margem suave de 0,35 s nas pontas).
 
-A interface pode ser forçada em `dictado_config.json`:
+A interface pode ser forçada em `dito_config.json`:
 
 ```json
 {"ui": "auto", "ui_scale": 0.8}
@@ -140,9 +140,9 @@ simulação de `Ctrl+V` falhar, ele envia o comando de colar direto ao
 campo de texto do programa em foco (WM_PASTE).
 
 Se a transcrição vier vazia, a janela mostra "mic baixo?" ou
-"nada entendido", e o áudio é salvo em `dictado_ultimo.wav` (sempre o
+"nada entendido", e o áudio é salvo em `dito_ultimo.wav` (sempre o
 mesmo arquivo, sobrescrito — nada acumula) junto do registro em
-`dictado.log`. Áudios com volume baixo são ampliados automaticamente
+`dito.log`. Áudios com volume baixo são ampliados automaticamente
 antes da transcrição (ganho até ×4).
 
 ## Troubleshooting
@@ -153,12 +153,12 @@ antes da transcrição (ganho até ×4).
 - **Instalação interrompida ou corrompida**: feche o app, apague a pasta
   `.venv` e repita os comandos acima.
 - **PyTorch sem CUDA**: atualize o driver da NVIDIA e repita a instalação
-  do PyTorch com o índice CUDA. O `dictado.log` mostra o que aconteceu.
+  do PyTorch com o índice CUDA. O `dito.log` mostra o que aconteceu.
 - **Mudei a pasta do projeto**: recrie o `.venv` na nova pasta seguindo
   as instruções acima; caminhos absolutos do ambiente antigo deixam de valer.
 - **Transcrição lenta**: o modelo roda em fp16 na GPU; frases curtas
   levam < 1 s. Se estiver em CPU, considere trocar `MODEL_SIZE` para
-  `"small"` no topo de `dictado_app/dictado.py`.
+  `"small"` no topo de `dito_app/dito.py`.
 - **Apps com `Ctrl+Shift+V`** (ex.: Windows Terminal): o app usa `Ctrl+V`;
   para esses, use o atalho de colar do próprio app ou ajuste a linha
   `keyboard.send("ctrl+v")` para `ctrl+shift+v`.
@@ -172,7 +172,7 @@ nativas do Windows via `ctypes` (janela em camada, DPI e foco).
 
 ## Licença
 
-O código do Dictado está sob a licença MIT (veja `LICENSE`).
+O código do Dito está sob a licença MIT (veja `LICENSE`).
 
 O modelo **CrisperWhisper 2.0** não está incluído no repositório e é
 baixado na primeira execução; ele tem licença de pesquisa

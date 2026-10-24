@@ -1,11 +1,11 @@
 """Pill de carregamento em processo separado.
 
-O modelo do Dictado demora para subir no boot. Nesse periodo, a rodinha
+O modelo do Dito demora para subir no boot. Nesse periodo, a rodinha
 nao depende do processo principal: roda em um processo proprio (Tk) e
 continua lisa mesmo quando o carregamento usa todo o CPU/GPU.
 O app principal cria este processo, mostra a pílula e fecha com a linha
 "quit" no stdin. Se o processo principal morrer, a pílula sai junto.
-No modo executavel empacotado, o proprio Dictado.exe roda com --splash.
+No modo executavel empacotado, o proprio Dito.exe roda com --splash.
 """
 import os
 import sys
@@ -29,7 +29,7 @@ def main(argv=None):
             pass
     parent_pid = 0
     try:
-        parent_pid = int(os.environ.get("DICTADO_PARENT_PID", "0"))
+        parent_pid = int(os.environ.get("DITO_PARENT_PID", "0"))
     except Exception:
         pass
     parent_check = None

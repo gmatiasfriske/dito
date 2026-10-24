@@ -1,4 +1,4 @@
-"""Interface do Dictado.
+"""Interface do Dito.
 
 O widget principal e desenhado com Pillow e exibido numa janela nativa
 layered (alpha por pixel), sem depender das limitacoes de desenho do Tk.
@@ -930,7 +930,7 @@ class NativeWidget:
         self._surface = None
         self._hwnd = 0
         self._fail_count = 0
-        self._class_name = f"DictadoWidget_{os.getpid()}"
+        self._class_name = f"DitoWidget_{os.getpid()}"
         self._setup_win32()
         self._hand_cursor = user32.LoadCursorW(None, 32649)
         try:
@@ -1026,7 +1026,7 @@ class NativeWidget:
         ]
         user32.CreateWindowExW.restype = wt.HWND
         hwnd = user32.CreateWindowExW(
-            ex_style, self._class_name, "Dictado", WS_POPUP,
+            ex_style, self._class_name, "Dito", WS_POPUP,
             0, 0, self.W, self.H, None, None,
             kernel32.GetModuleHandleW(None), None,
         )
@@ -1155,7 +1155,7 @@ class NativeWidget:
                     self._mouse_hook = None
 
         threading.Thread(
-            target=run, name="dictado-mouse-hook", daemon=True).start()
+            target=run, name="dito-mouse-hook", daemon=True).start()
 
     def show(self):
         if self._hwnd:
@@ -1650,7 +1650,7 @@ class ClassicWidget:
         self._settings_open = False
         self.preview_stream = None
 
-        self.root.title("Dictado")
+        self.root.title("Dito")
         self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
         self.root.attributes("-toolwindow", True)
