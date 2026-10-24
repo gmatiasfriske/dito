@@ -21,7 +21,7 @@ fala junto com o ruído.
 
 Requisitos: Windows 10/11 64 bits, Python **3.11 ou 3.12** e, de
 preferência, uma GPU NVIDIA. O passo a passo curto também está em
-**`LEIA-ME.txt`**.
+**este README**.
 
 ```bat
 py -3.11 -m venv .venv
@@ -141,13 +141,13 @@ antes da transcrição (ganho até ×4).
 
 - **Python não encontrado**: instale o Python 3.11 em
   [python.org/downloads](https://www.python.org/downloads/) e marque
-  **Add python.exe to PATH**; depois siga o `LEIA-ME.txt` novamente.
+  **Add python.exe to PATH**; depois siga as instruções acima novamente.
 - **Instalação interrompida ou corrompida**: feche o app, apague a pasta
-  `.venv` e repita os comandos do `LEIA-ME.txt`.
+  `.venv` e repita os comandos acima.
 - **PyTorch sem CUDA**: atualize o driver da NVIDIA e repita a instalação
   do PyTorch com o índice CUDA. O `dictado.log` mostra o que aconteceu.
 - **Mudei a pasta do projeto**: recrie o `.venv` na nova pasta seguindo
-  o `LEIA-ME.txt`; caminhos absolutos do ambiente antigo deixam de valer.
+  as instruções acima; caminhos absolutos do ambiente antigo deixam de valer.
 - **Transcrição lenta**: o modelo roda em fp16 na GPU; frases curtas
   levam < 1 s. Se estiver em CPU, considere trocar `MODEL_SIZE` para
   `"small"` no topo de `dictado_app/dictado.py`.

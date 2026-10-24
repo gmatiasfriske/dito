@@ -2107,7 +2107,7 @@ def main():
     try:
         import faulthandler
         faulthandler.enable(
-            open(os.path.join(BASE_DIR, "dictado_fault.log"), "a", encoding="utf-8"))
+            open(LOG_PATH, "a", encoding="utf-8"))
     except Exception:
         pass
     print("===== DICTADO =====", flush=True)
