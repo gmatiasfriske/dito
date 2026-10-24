@@ -39,6 +39,11 @@ SAMPLE_RATE = 16000
 HOTKEY = "ctrl+y"
 SENS_LEVELS = 7
 SENS_DEFAULT = 4
+LANGUAGES = {
+    "Português": "pt",
+    "English": "en",
+    "Español": "es",
+}
 
 DEFAULT_CFG = {
     "silence": 0.006,
@@ -46,6 +51,7 @@ DEFAULT_CFG = {
     "denoise": True,
     "ui": "auto",
     "ui_scale": 0.8,
+    "language": "pt",
 }
 
 STATE_LOADING = "loading"
@@ -505,6 +511,10 @@ class DitoApp:
             self.sens_level,
         )
 
+    def _language(self):
+        value = str(self.cfg.get("language", LANGUAGE) or LANGUAGE).strip()
+        return value if value in LANGUAGES.values() else LANGUAGE
+
     def _gate_sensitivity_db(self):
         return audio_fx.gate_sensitivity_db(self.sens_level)
 
@@ -667,6 +677,13 @@ class DitoApp:
         voice_var = tk.DoubleVar(
             value=self._level_to_slider(self.cfg["voice"]))
         denoise_var = tk.BooleanVar(value=self.cfg.get("denoise", True))
+        current_language = self._language()
+        language_label = next(
+            (name for name, code in LANGUAGES.items()
+             if code == current_language),
+            "Português",
+        )
+        language_var = tk.StringVar(value=language_label)
 
         outer = tk.Frame(win, bg="#141416", padx=int(round(18 * s)),
                          pady=int(round(14 * s)))
@@ -723,6 +740,25 @@ class DitoApp:
             fg="#636366", font=("Segoe UI", 8), anchor="w",
         ).pack(fill="x", pady=(2, 10))
 
+        lang_row = tk.Frame(outer, bg="#141416")
+        lang_row.pack(fill="x", pady=(0, 10))
+        tk.Label(
+            lang_row, text="Idioma da transcrição", bg="#141416",
+            fg="#e5e5ea", font=("Segoe UI", 9), anchor="w",
+        ).pack(side="left")
+        lang_menu = tk.OptionMenu(
+            lang_row, language_var, *LANGUAGES.keys())
+        lang_menu.config(
+            bg="#2c2c33", fg="#f5f5f7", activebackground="#3a3a42",
+            activeforeground="#ffffff", highlightthickness=0, bd=0,
+            font=("Segoe UI", 9), width=12, anchor="w",
+        )
+        lang_menu["menu"].config(
+            bg="#2c2c33", fg="#f5f5f7", activebackground="#0a84ff",
+            activeforeground="#ffffff", font=("Segoe UI", 9),
+        )
+        lang_menu.pack(side="right")
+
         denoise_row = tk.Frame(outer, bg="#141416")
         denoise_row.pack(fill="x", pady=(0, 12))
         tk.Label(
@@ -743,7 +779,7 @@ class DitoApp:
         widget_ui.PillButton(
             btns, "Salvar",
             lambda: self._save_settings(
-                win, silence_var, voice_var, denoise_var),
+                win, silence_var, voice_var, denoise_var, language_var),
             width=92, height=30, fill="#0a84ff", hover="#2f9bff",
             bg="#141416", scale=s,
         ).pack(side="right")
@@ -793,17 +829,21 @@ class DitoApp:
         win.grab_set()
         win.lift()
 
-    def _save_settings(self, win, silence_var, voice_var, denoise_var):
+    def _save_settings(self, win, silence_var, voice_var, denoise_var,
+                       language_var):
         self.cfg["silence"] = round(self._slider_to_level(silence_var.get()), 5)
         self.cfg["voice"] = round(self._slider_to_level(voice_var.get()), 5)
         self.cfg["denoise"] = bool(denoise_var.get())
+        self.cfg["language"] = LANGUAGES.get(
+            language_var.get(), LANGUAGE)
         if self.cfg["voice"] < self.cfg["silence"]:
             self.cfg["voice"] = self.cfg["silence"]
         save_cfg(self.cfg)
         self.view.set_thresholds(self.cfg["silence"], self.cfg["voice"])
         self.view.refresh_thresholds()
         log(f"config salva: silêncio={self.cfg['silence']}, "
-            f"voz={self.cfg['voice']}, denoise={self.cfg['denoise']}")
+            f"voz={self.cfg['voice']}, denoise={self.cfg['denoise']}, "
+            f"idioma={self.cfg['language']}")
         self._close_settings(win)
 
     def _close_settings(self, win):
@@ -1488,7 +1528,8 @@ class DitoApp:
                     log(f"ganho aplicado: x{gain:.2f} (peak={peak:.3f})")
                 with self.gpu_lock:
                     result = self.model.transcribe(
-                        boosted, language=LANGUAGE, mode="intended", sr=SAMPLE_RATE,
+                        boosted, language=self._language(), mode="intended",
+                        sr=SAMPLE_RATE,
                     )
                 texts.append(result.text.strip())
                 self._trim_gpu_cache()
@@ -1544,7 +1585,7 @@ class DitoApp:
     def _transcribe_audio(self, audio, idioma=None):
         # nucleo da transcricao para uso externo (LoreStudio): mesmo pipeline
         # do ditado (denoise, vad, chunks, ganho), sem colar em janela
-        lang = (idioma or LANGUAGE)
+        lang = (idioma or self._language())
         if self.cfg.get("denoise", True):
             audio = self._denoise(audio)
         audio, had_voice = self._vad_trim(audio)
@@ -1581,7 +1622,7 @@ class DitoApp:
         # Divide em blocos de ~5min SEM overlap (limita VRAM; offsets triviais
         # somando o inicio do bloco). Dentro do bloco o modelo faz o longform.
         # Retorna (texto, palavras[{w,s,e}]).
-        lang = (idioma or LANGUAGE)
+        lang = (idioma or self._language())
         if self.cfg.get("denoise", True):
             audio = self._denoise(audio)
         audio, had_voice, trim_off = self._vad_trim(audio, want_offset=True)
@@ -1647,7 +1688,7 @@ class DitoApp:
         # fatia com texto LIMPO (intended). Tempos das frases = exatos (as
         # fatias são nossas); sem karaokê por palavra.
         # Retorna (texto, palavras[], segmentos[{s,e,texto}]).
-        lang = (idioma or LANGUAGE)
+        lang = (idioma or self._language())
         if self.cfg.get("denoise", True):
             audio = self._denoise(audio)
         audio, had_voice, trim_off = self._vad_trim(audio, want_offset=True)
@@ -1817,7 +1858,8 @@ class DitoApp:
                         return self._send(400, {"erro": f"wav precisa ser {SAMPLE_RATE}Hz"})
                     idioma = str(req.get("idioma") or "").strip()[:5] or None
                     log(f"rpc: transcrevendo {os.path.basename(caminho)} "
-                        f"({len(audio) / SAMPLE_RATE:.1f}s, idioma={idioma or LANGUAGE}"
+                        f"({len(audio) / SAMPLE_RATE:.1f}s, "
+                        f"idioma={idioma or self._language()}"
                         f"{', timestamps' if req.get('timestamps') else ''})")
                     if req.get("timestamps"):
                         if req.get("words") is False:
